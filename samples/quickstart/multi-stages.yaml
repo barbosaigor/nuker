@@ -1,0 +1,82 @@
+version: v0.0.0
+
+stages:
+  - name: donwstreams 
+    steps:
+      - name: Warm up
+        containers:
+          - name: Warm up fees
+            duration: 60 # seconds
+            holdFor: 30 # wait more 30 seconds with final traffic
+            min: 100 # 100 requests per seconds
+            max: 200 # 200 requests per seconds
+            network:
+              protocol: http # default
+              path: /fees
+              method: GET # default
+              host: "http://0.0.0.0:8080"
+              body: "{\"id\": \"123\", \"quantity\": 10}"
+          - name: Warm up offer
+            duration: 60 # seconds
+            min: 100 # 100 requests per seconds
+            max: 200 # 200 requests per seconds
+            network:
+              protocol: http # default
+              path: /offer
+              method: GET # default
+              host: "http://0.0.0.0:8080"
+      - name: Heavy load
+        containers:
+          - name: Heavy load fees
+            duration: 60 # seconds
+            min: 1000 # 100 requests per seconds
+            max: 2000 # 100 requests per seconds
+            network:
+              path: /fees
+              host: "http://0.0.0.0:8080"
+          - name: Heavy load offer
+            duration: 60 # seconds
+            min: 1000 # 100 requests per seconds
+            max: 2000 # 100 requests per seconds
+            network:
+              path: /offer
+              host: "http://0.0.0.0:8080"
+  - name: principal flow 
+    steps:
+      - name: Warm up
+        containers:
+          - name: Warm up product
+            duration: 60 # seconds
+            holdFor: 30 # wait more 30 seconds with final traffic
+            min: 100 # 100 requests per seconds
+            max: 200 # 200 requests per seconds
+            network:
+              protocol: http # default
+              path: /product
+              method: GET # default
+              host: "http://0.0.0.0:8080"
+          - name: Warm up stock
+            duration: 60 # seconds
+            min: 100 # 100 requests per seconds
+            max: 200 # 200 requests per seconds
+            network:
+              protocol: http # default
+              path: /stock
+              method: GET # default
+              host: "http://0.0.0.0:8080"
+      - name: Heavy load
+        containers:
+          - name: Heavy load product
+            duration: 60 # seconds
+            min: 1000 # 100 requests per seconds
+            max: 2000 # 100 requests per seconds
+            network:
+              path: /product
+              host: "http://0.0.0.0:8080"
+          - name: Heavy load stock
+            duration: 60 # seconds
+            min: 1000 # 100 requests per seconds
+            max: 2000 # 100 requests per seconds
+            network:
+              path: /stock
+              host: "http://0.0.0.0:8080"
