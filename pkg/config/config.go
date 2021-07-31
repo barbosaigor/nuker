@@ -16,8 +16,6 @@ type Container struct {
 	Min      int
 	Max      int
 	Network  Network
-	Payload  string
-	Filename string
 }
 
 type Step struct {

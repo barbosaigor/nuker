@@ -13,7 +13,9 @@ $ go get -u github.com/barbosaigor/nuker/...
 
 **How to use**  
 ```sh
-$ nuker plan.yaml  
+$ nuker run plan.yaml  
+$ # or
+$ nuker exec http://my-api.com/product/v2/123 --min 150 --max 250 --duration 10
 ```
 
 ## (Goals) Features  

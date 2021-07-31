@@ -25,7 +25,7 @@ func New(httpSteamer repository.Streamer) Publisher {
 }
 
 func (p *publisher) Publish(ctx context.Context, cfg config.Network) (*metrics.NetworkMetrics, error) {
-	if cfg.Protocol == "" || strings.EqualFold(cfg.Protocol, "http") {
+	if cfg.Protocol == "" || strings.EqualFold(cfg.Protocol, "http") || strings.EqualFold(cfg.Protocol, "https") {
 		return p.httpSteamer.Stream(ctx, cfg)
 	}
 

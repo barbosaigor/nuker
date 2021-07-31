@@ -67,6 +67,6 @@ func (p *probe) metrReport(ctx context.Context) {
 	log.
 		Ctx(ctx).
 		Info().
-		Str("log-location", p.logger.Location()).
+		Str("log-path", p.logger.Location()).
 		Msg(p.metRate.String())
 }
