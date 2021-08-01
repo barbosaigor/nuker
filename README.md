@@ -34,7 +34,7 @@ $ nuker help
 
 ### Plan file  
 Nuker creates a pipeline in order to execute the test. 
-The pipeline consist in stage, which has a step, which has containers. Stages and steps run sequentaily, and each container runs concurrently (within the step).  
+The pipeline consist in stages, which have steps, which have containers. Stages and steps run sequentaily, and each container runs concurrently (within the step).  
 
 ```yaml
 version: v0.0.0
