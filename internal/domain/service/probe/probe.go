@@ -3,6 +3,7 @@ package probe
 import (
 	"context"
 	"io"
+	"sync"
 
 	"github.com/barbosaigor/nuker/internal/domain/repository"
 	"github.com/barbosaigor/nuker/pkg/metrics"
@@ -18,12 +19,14 @@ type probe struct {
 	// logReader write metrics info into either a file, stdout, networking or etc.
 	logger  repository.BufWriter
 	metRate *MetricRate
+	mut     *sync.Mutex
 }
 
 func New(logger repository.BufWriter) Probe {
 	return &probe{
 		logger:  logger,
 		metRate: &MetricRate{},
+		mut:     &sync.Mutex{},
 	}
 }
 
@@ -53,6 +56,8 @@ func (p *probe) writeMetr(ctx context.Context, m *metrics.NetworkMetrics) error 
 	}
 
 	log.Ctx(ctx).Debug().Msg("metric: " + m.String())
+	p.mut.Lock()
+	defer p.mut.Unlock()
 	n, err := io.WriteString(p.logger, m.String())
 	if err != nil {
 		log.Ctx(ctx).Error().Msg("Error to write metric in probe writer")

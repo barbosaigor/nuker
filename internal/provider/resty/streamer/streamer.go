@@ -21,7 +21,8 @@ func New(client *resty.Client) repository.Streamer {
 }
 
 func (s streamer) Stream(ctx context.Context, cfg config.Network) (*metrics.NetworkMetrics, error) {
-	res, err := s.client.R().
+	res, err := s.client.
+		R().
 		SetBody(cfg.Body).
 		SetHeaders(cfg.Headers).
 		Execute(strings.ToUpper(cfg.Method), cfg.Host+cfg.Path)
