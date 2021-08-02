@@ -12,8 +12,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var VERSION string = "0.1.0"
-
 type runner struct {
 	pipeline pipeline.Pipeline
 }
@@ -38,6 +36,7 @@ func (r *runner) Run(ctx context.Context) error {
 
 func (r *runner) exec(ctx context.Context) error {
 	cfg := cli.BuildExecCmdCfg()
+	log.Trace().Msgf("config: %+v", cfg)
 	if cfg == nil {
 		return errors.New("nil exec config")
 	}

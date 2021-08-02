@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var VERSION string = "0.1.0"
+var VERSION string = "0.0.0"
 
 // Exec Command flags
 var DryRunFlagExecCmd bool
