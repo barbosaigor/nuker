@@ -6,6 +6,7 @@ type Network struct {
 	Path     string
 	Method   string
 	Headers  map[string]string
+	Timeout  int
 	Body     string
 }
 

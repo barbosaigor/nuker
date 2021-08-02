@@ -3,6 +3,7 @@ package streamer
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/barbosaigor/nuker/internal/domain/repository"
 	"github.com/barbosaigor/nuker/pkg/config"
@@ -21,7 +22,14 @@ func New(client *resty.Client) repository.Streamer {
 }
 
 func (s streamer) Stream(ctx context.Context, cfg config.Network) (*metrics.NetworkMetrics, error) {
+
+	timeout := 3 * time.Second
+	if cfg.Timeout > 0 {
+		timeout = time.Duration(cfg.Timeout) * time.Second
+	}
+
 	res, err := s.client.
+		SetTimeout(timeout).
 		R().
 		SetBody(cfg.Body).
 		SetHeaders(cfg.Headers).

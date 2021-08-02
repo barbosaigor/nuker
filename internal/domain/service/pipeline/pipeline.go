@@ -87,7 +87,7 @@ func (p *pipeline) run(ctx context.Context, cfg config.Config, metChan chan<- *m
 }
 
 func (p *pipeline) startTicker(ctx context.Context, container config.Container, metChan chan<- *metrics.NetworkMetrics) {
-	tCtx, cancelFn := context.WithTimeout(ctx, time.Second*time.Duration(container.Duration))
+	tCtx, cancelFn := context.WithTimeout(ctx, time.Second*time.Duration(container.Duration+container.HoldFor))
 	defer cancelFn()
 
 	ticker := time.NewTicker(time.Second)
