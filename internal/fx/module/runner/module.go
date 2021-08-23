@@ -9,7 +9,7 @@ import (
 	"github.com/barbosaigor/nuker/internal/cli"
 	"github.com/barbosaigor/nuker/internal/fx/module/domain/service/pipeline"
 	"github.com/barbosaigor/nuker/internal/runner"
-	"github.com/rs/zerolog"
+	log "github.com/sirupsen/logrus"
 	"go.uber.org/fx"
 )
 
@@ -17,9 +17,9 @@ func Module() fx.Option {
 	cli.ExecCli()
 
 	if cli.Verbose {
-		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+		log.SetLevel(log.TraceLevel)
 	} else {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		log.SetLevel(log.InfoLevel)
 	}
 
 	var consoleWriter io.Writer = os.Stdout
@@ -27,21 +27,12 @@ func Module() fx.Option {
 		consoleWriter = ioutil.Discard
 	}
 
-	logger := zerolog.
-		New(consoleWriter).
-		With().
-		Timestamp().
-		Logger()
-
-	ctx := logger.WithContext(context.Background())
+	logger := log.New()
+	logger.SetOutput(consoleWriter)
 
 	return fx.Options(
-		fx.Logger(newFxLooger(ctx)),
-		fx.Provide(
-			func() context.Context {
-				return ctx
-			},
-		),
+		fx.Logger(newFxLooger(logger)),
+		fx.Provide(context.Background),
 		pipeline.Module(),
 		fx.Provide(runner.New),
 	)

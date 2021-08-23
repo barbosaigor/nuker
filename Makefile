@@ -1,4 +1,4 @@
-.PHONY: test, lint, run
+.PHONY: test, lint, run, clear
 
 build:
 	@echo todo
@@ -14,3 +14,6 @@ lint:
 
 run:
 	go run cmd/nuker/main.go
+
+clear:
+	rm nuker-*.jsonl

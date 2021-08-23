@@ -5,9 +5,9 @@ import (
 	"io"
 	"sync"
 
-	"github.com/barbosaigor/nuker/internal/domain/repository"
+	"github.com/barbosaigor/nuker/internal/domain/service/bufwriter"
 	"github.com/barbosaigor/nuker/pkg/metrics"
-	"github.com/rs/zerolog/log"
+	log "github.com/sirupsen/logrus"
 )
 
 // Probe listens to metrics incoming and operate metrics info
@@ -17,12 +17,12 @@ type Probe interface {
 
 type probe struct {
 	// logReader write metrics info into either a file, stdout, networking or etc.
-	logger  repository.BufWriter
+	logger  bufwriter.BufWriter
 	metRate *MetricRate
 	mut     *sync.Mutex
 }
 
-func New(logger repository.BufWriter) Probe {
+func New(logger bufwriter.BufWriter) Probe {
 	return &probe{
 		logger:  logger,
 		metRate: &MetricRate{},
@@ -31,17 +31,17 @@ func New(logger repository.BufWriter) Probe {
 }
 
 func (p *probe) Listen(ctx context.Context, met <-chan *metrics.NetworkMetrics) error {
-	log.Ctx(ctx).Trace().Msg("probe: listening")
+	log.Trace("probe: listening")
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Ctx(ctx).Trace().Msg("probe: context close")
+			log.Trace("probe: context close")
 			p.metrReport(ctx)
 			return nil
 		case m, ok := <-met:
 			if !ok {
-				log.Ctx(ctx).Trace().Msg("probe: metrics channel close")
+				log.Trace("probe: metrics channel close")
 				return nil
 			}
 			_ = p.writeMetr(ctx, m)
@@ -55,23 +55,21 @@ func (p *probe) writeMetr(ctx context.Context, m *metrics.NetworkMetrics) error 
 		return nil
 	}
 
-	log.Ctx(ctx).Debug().Msg("metric: " + m.String())
+	log.Debug("metric: " + m.String())
 	p.mut.Lock()
 	defer p.mut.Unlock()
 	n, err := io.WriteString(p.logger, m.String())
 	if err != nil {
-		log.Ctx(ctx).Error().Msg("Error to write metric in probe writer")
+		log.Error("Error to write metric in probe writer")
 	}
 
-	log.Ctx(ctx).Debug().Msgf("metrics with %d bytes wrote to writer", n)
+	log.Debugf("metrics with %d bytes wrote to writer", n)
 
 	return err
 }
 
 func (p *probe) metrReport(ctx context.Context) {
 	log.
-		Ctx(ctx).
-		Info().
-		Str("log-path", p.logger.Location()).
-		Msg(p.metRate.String())
+		WithField("logPath", p.logger.Location()).
+		Info(p.metRate.String())
 }

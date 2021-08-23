@@ -1,25 +1,20 @@
 package runner
 
 import (
-	"context"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	log "github.com/sirupsen/logrus"
 	"go.uber.org/fx"
 )
 
 type fxLogger struct {
-	logger *zerolog.Logger
+	logger *log.Logger
 }
 
-func newFxLooger(ctx context.Context) fx.Printer {
+func newFxLooger(logger *log.Logger) fx.Printer {
 	return &fxLogger{
-		logger: log.Ctx(ctx),
+		logger: logger,
 	}
 }
 
 func (l fxLogger) Printf(format string, v ...interface{}) {
-	l.logger.
-		Trace().
-		Msgf(format, v...)
+	l.logger.Tracef(format, v...)
 }

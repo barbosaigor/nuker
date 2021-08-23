@@ -9,7 +9,7 @@ import (
 	"github.com/barbosaigor/nuker/internal/domain/service/pipeline"
 	"github.com/barbosaigor/nuker/pkg/config"
 	pkgrunner "github.com/barbosaigor/nuker/pkg/runner"
-	"github.com/rs/zerolog/log"
+	log "github.com/sirupsen/logrus"
 )
 
 type runner struct {
@@ -36,13 +36,13 @@ func (r *runner) Run(ctx context.Context) error {
 
 func (r *runner) exec(ctx context.Context) error {
 	cfg := cli.BuildExecCmdCfg()
-	log.Trace().Msgf("config: %+v", cfg)
+	log.Tracef("config: %+v", cfg)
 	if cfg == nil {
 		return errors.New("nil exec config")
 	}
 
 	if cli.DryRunFlagExecCmd {
-		log.Info().Msgf("plan: %+v", *cfg)
+		log.Infof("plan: %+v", *cfg)
 		return nil
 	}
 

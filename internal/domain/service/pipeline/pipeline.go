@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog/log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
 	"github.com/barbosaigor/nuker/internal/domain/service/probe"
@@ -33,7 +33,7 @@ func New(pub publisher.Publisher, probeSvc probe.Probe) Pipeline {
 }
 
 func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
-	log.Ctx(ctx).Debug().Msg("starting pipeline")
+	log.Debug("starting pipeline")
 
 	metChan := make(chan *metrics.NetworkMetrics)
 	defer close(metChan)
@@ -58,13 +58,13 @@ func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
 }
 
 func (p *pipeline) run(ctx context.Context, cfg config.Config, metChan chan<- *metrics.NetworkMetrics) {
-	log.Ctx(ctx).Trace().Msgf("%+v", cfg)
+	log.Tracef("%+v", cfg)
 
 	for _, stg := range cfg.Stages {
-		log.Ctx(ctx).Info().Msg("running stage " + stg.Name)
+		log.Info("running stage " + stg.Name)
 
 		for _, step := range stg.Steps {
-			log.Ctx(ctx).Info().Msg("running step " + step.Name)
+			log.Info("running step " + step.Name)
 
 			stepWg := &sync.WaitGroup{}
 			stepWg.Add(len(step.Containers))
@@ -75,7 +75,7 @@ func (p *pipeline) run(ctx context.Context, cfg config.Config, metChan chan<- *m
 				go func() {
 					defer stepWg.Done()
 
-					log.Ctx(ctx).Info().Msg("running container " + container.Name)
+					log.Info("running container " + container.Name)
 
 					p.startTicker(ctx, container, metChan)
 				}()
@@ -97,10 +97,10 @@ func (p *pipeline) startTicker(ctx context.Context, container config.Container, 
 	for {
 		select {
 		case <-tCtx.Done():
-			log.Ctx(ctx).Trace().Msg("ctx timeout")
+			log.Trace("ctx timeout")
 			return
 		case <-ticker.C:
-			log.Ctx(ctx).Trace().Msg("do request")
+			log.Trace("do request")
 			p.runContainer(tCtx, startTime, container, metChan)
 		}
 	}
@@ -119,7 +119,7 @@ func (p *pipeline) runContainer(
 	wg := &sync.WaitGroup{}
 	wg.Add(reqCount)
 
-	log.Ctx(ctx).Trace().Msgf("request count: %d", reqCount)
+	log.Tracef("request count: %d", reqCount)
 
 	for i := 0; i < reqCount; i++ {
 		go func() {
@@ -127,7 +127,7 @@ func (p *pipeline) runContainer(
 
 			met, err := p.pubSvc.Publish(ctx, container.Network)
 			if errors.Is(err, model.ErrProtNotSupported) {
-				log.Ctx(ctx).Debug().Err(err)
+				log.Debug(err)
 				return
 			}
 
