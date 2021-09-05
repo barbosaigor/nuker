@@ -34,6 +34,9 @@ func Module() fx.Option {
 		fx.Logger(newFxLooger(logger)),
 		fx.Provide(context.Background),
 		pipeline.Module(),
-		fx.Provide(runner.New),
+		fx.Provide(
+			runner.LoadCfg,
+			runner.New,
+		),
 	)
 }

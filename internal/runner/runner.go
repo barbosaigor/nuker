@@ -14,20 +14,22 @@ import (
 
 type runner struct {
 	pipeline pipeline.Pipeline
+	opts     Options
 }
 
-func New(pipeline pipeline.Pipeline) pkgrunner.Runner {
+func New(pipeline pipeline.Pipeline, opts Options) pkgrunner.Runner {
 	return &runner{
 		pipeline: pipeline,
+		opts:     opts,
 	}
 }
 
 func (r *runner) Run(ctx context.Context) error {
-	if cli.IsExec {
+	if r.opts.Op == exec {
 		return r.exec(ctx)
 	}
 
-	if cli.IsRun {
+	if r.opts.Op == run {
 		return r.run(ctx)
 	}
 
