@@ -25,15 +25,14 @@ func New(pipeline pipeline.Pipeline, opts Options) pkgrunner.Runner {
 }
 
 func (r *runner) Run(ctx context.Context) error {
-	if r.opts.Op == exec {
+	switch r.opts.Op {
+	case exec:
 		return r.exec(ctx)
-	}
-
-	if r.opts.Op == run {
+	case run:
 		return r.run(ctx)
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func (r *runner) exec(ctx context.Context) error {

@@ -9,15 +9,19 @@ import (
 )
 
 // New creates a bufWriter with file provider
-func New(fileName string) (bufwriter.BufWriter, error) {
-	if fileName == "" {
-		fileName = fmt.Sprintf("nuker-%v.jsonl", time.Now().Unix())
+func New(fName string) (bufwriter.BufWriter, error) {
+	if fName == "" {
+		fName = fileName(fName)
 	}
 
-	file, err := os.Create(fileName)
+	file, err := os.Create(fName)
 	if err != nil {
 		return nil, err
 	}
 
-	return bufwriter.New(file, fileName)
+	return bufwriter.New(file, fName)
+}
+
+func fileName(fName string) string {
+	return fmt.Sprintf("nuker-%v.jsonl", time.Now().Unix())
 }
