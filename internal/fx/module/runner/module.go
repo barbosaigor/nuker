@@ -16,6 +16,11 @@ import (
 func Module() fx.Option {
 	cli.ExecCli()
 
+	log.SetFormatter(&log.TextFormatter{
+		ForceQuote:    true,
+		FullTimestamp: true,
+	})
+
 	if cli.Verbose {
 		log.SetLevel(log.TraceLevel)
 	} else {
