@@ -113,7 +113,7 @@ func (p *pipeline) runContainer(
 	metChan chan<- *metrics.NetworkMetrics) {
 
 	currTime := time.Duration(time.Now().UnixNano())
-	endTime := time.Duration(container.Duration)
+	endTime := time.Duration(container.Duration * int(time.Second))
 	reqCount := p.calcRequests(startTime, endTime, currTime, container.Min, container.Max)
 
 	wg := &sync.WaitGroup{}
@@ -141,17 +141,25 @@ func (p *pipeline) runContainer(
 }
 
 func (p *pipeline) calcRequests(start, end, curr time.Duration, min, max int) int {
-	if max == 0 {
+	if end <= 0 || min < 0 {
+		return 0
+	}
+
+	if max == 0 || max < min {
 		max = min
 	}
 
-	dt := float64((curr - start) / time.Second)
-	ratio := dt / float64(end)
-	dr := ratio * float64(max)
+	a := float64(float64(curr-start)/float64(time.Second)) * float64(max-min)
+	b := float64(float64(end-start) / float64(time.Second))
+	if b == 0 {
+		return 0
+	}
 
-	if int(dr) > max {
+	requests := min + int(a/b)
+
+	if int(requests) > max {
 		return max
 	}
 
-	return int(dr)
+	return requests
 }
