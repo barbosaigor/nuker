@@ -2,15 +2,14 @@ package pipeline
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
+	"github.com/barbosaigor/nuker/internal/domain/service/orchestrator"
 	"github.com/barbosaigor/nuker/internal/domain/service/probe"
-	"github.com/barbosaigor/nuker/internal/domain/service/publisher"
 	"github.com/barbosaigor/nuker/pkg/config"
 	"github.com/barbosaigor/nuker/pkg/metrics"
 	"golang.org/x/sync/errgroup"
@@ -21,14 +20,14 @@ type Pipeline interface {
 }
 
 type pipeline struct {
-	pubSvc   publisher.Publisher
 	probeSvc probe.Probe
+	orqSvc   orchestrator.Orchestrator
 }
 
-func New(pub publisher.Publisher, probeSvc probe.Probe) Pipeline {
+func New(probeSvc probe.Probe, orqSvc orchestrator.Orchestrator) Pipeline {
 	return &pipeline{
-		pubSvc:   pub,
 		probeSvc: probeSvc,
+		orqSvc:   orqSvc,
 	}
 }
 
@@ -116,28 +115,14 @@ func (p *pipeline) runContainer(
 	endTime := time.Duration(container.Duration * int(time.Second))
 	reqCount := p.calcRequests(startTime, endTime, currTime, container.Min, container.Max)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(reqCount)
-
 	log.Tracef("request count: %d", reqCount)
 
-	for i := 0; i < reqCount; i++ {
-		go func() {
-			defer wg.Done()
-
-			met, err := p.pubSvc.Publish(ctx, container.Network)
-			if errors.Is(err, model.ErrProtNotSupported) {
-				log.Debug(err)
-				return
-			}
-
-			if met != nil {
-				metChan <- met
-			}
-		}()
+	wl := model.Workload{
+		RequestsCount: reqCount,
+		Cfg:           container.Network,
 	}
 
-	wg.Wait()
+	_ = p.orqSvc.AssignWorkload(ctx, wl, metChan)
 }
 
 func (p *pipeline) calcRequests(start, end, curr time.Duration, min, max int) int {
