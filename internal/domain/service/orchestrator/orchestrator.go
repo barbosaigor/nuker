@@ -2,11 +2,15 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
 	"github.com/barbosaigor/nuker/internal/domain/service/worker"
 	"github.com/barbosaigor/nuker/pkg/metrics"
+	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type Orchestrator interface {
@@ -17,12 +21,16 @@ type Orchestrator interface {
 type orchestrator struct {
 	workers     map[string]worker.Worker
 	totalWeight int
+	server      *fiber.App
+	mut         *sync.RWMutex
 }
 
 func New(workers map[string]worker.Worker) Orchestrator {
 	return &orchestrator{
 		workers:     workers,
 		totalWeight: sumWeights(workers),
+		server:      fiber.New(),
+		mut:         &sync.RWMutex{},
 	}
 }
 
@@ -37,8 +45,25 @@ func sumWeights(workers map[string]worker.Worker) int {
 // TODO
 // Listen to new/delete workers
 func (o *orchestrator) Listen() error {
-	// start http server
-	return nil
+	o.server.Post("/worker/:id", func(c *fiber.Ctx) error {
+		workerID := c.Params("id")
+		o.mut.RLock()
+		_, ok := o.workers[workerID]
+		o.mut.RUnlock()
+		if !ok {
+			logrus.
+				WithField("worker-id", workerID).
+				Infof("worker %s:%s registered", c.IP(), c.Port())
+			o.mut.Lock()
+			o.workers[workerID] = worker.New(workerID, 1, nil)
+			o.mut.Unlock()
+		}
+
+		c.Status(http.StatusCreated)
+		return c.SendString(fmt.Sprintf("Hello %s, World 👋!", workerID))
+	})
+
+	return o.server.Listen(":9050")
 }
 
 // AssignWorkload distribute workload among workers

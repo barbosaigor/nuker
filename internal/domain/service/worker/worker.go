@@ -2,60 +2,39 @@ package worker
 
 import (
 	"context"
-	"errors"
-	"sync"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
-	"github.com/barbosaigor/nuker/internal/domain/service/publisher"
+	"github.com/barbosaigor/nuker/internal/domain/repository"
 	"github.com/barbosaigor/nuker/pkg/metrics"
 	log "github.com/sirupsen/logrus"
 )
 
 type Worker interface {
-	Do(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics)
 	ID() string
 	Weight() int
+	Do(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics)
 }
 
 type worker struct {
-	id     string
-	pub    publisher.Publisher
-	weight int
+	id      string
+	weight  int
+	courier repository.Courier
 }
 
-func New(ID string, pub publisher.Publisher, weight int) Worker {
-	return &worker{
-		id:     ID,
-		pub:    pub,
-		weight: weight,
+func New(ID string, weight int, courier repository.Courier) Worker {
+	return worker{
+		id:      ID,
+		weight:  weight,
+		courier: courier,
 	}
 }
 
 func (w worker) Do(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) {
-	wg := &sync.WaitGroup{}
-	wg.Add(wl.RequestsCount)
-
 	log.
 		WithField("worker", w.id).
 		Tracef("request count: %d", wl.RequestsCount)
 
-	for i := 0; i < wl.RequestsCount; i++ {
-		go func() {
-			defer wg.Done()
-
-			met, err := w.pub.Publish(ctx, wl.Cfg)
-			if errors.Is(err, model.ErrProtNotSupported) {
-				log.Debug(err)
-				return
-			}
-
-			if met != nil {
-				metChan <- met
-			}
-		}()
-	}
-
-	wg.Wait()
+	_ = w.courier.Do(ctx, wl, metChan)
 }
 
 func (w worker) ID() string {

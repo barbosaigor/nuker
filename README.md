@@ -84,7 +84,8 @@ Each worker should connect to the master nuker, following master URL.
 
 Start a master nuker:  
 ```sh
-$ nuker master plan.yaml
+$ # --as-worker makes master a worker as well  
+$ nuker master plan.yaml --as-worker
 master URL: http://node-ip.io/master
 ```
 
