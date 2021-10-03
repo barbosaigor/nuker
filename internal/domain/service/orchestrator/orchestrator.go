@@ -2,15 +2,15 @@ package orchestrator
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"sync"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
 	"github.com/barbosaigor/nuker/internal/domain/service/worker"
+	"github.com/barbosaigor/nuker/internal/provider/resty/requester"
 	"github.com/barbosaigor/nuker/pkg/metrics"
+	"github.com/barbosaigor/nuker/pkg/net"
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 type Orchestrator interface {
@@ -23,14 +23,24 @@ type orchestrator struct {
 	totalWeight int
 	server      *fiber.App
 	mut         *sync.RWMutex
+	opts        Options
 }
 
-func New(workers map[string]worker.Worker) Orchestrator {
+type workerBody struct {
+	Weight int
+}
+
+func New(workers map[string]worker.Worker, opts Options) Orchestrator {
+	if workers == nil {
+		workers = map[string]worker.Worker{}
+	}
+
 	return &orchestrator{
 		workers:     workers,
 		totalWeight: sumWeights(workers),
 		server:      fiber.New(),
 		mut:         &sync.RWMutex{},
+		opts:        opts,
 	}
 }
 
@@ -42,34 +52,81 @@ func sumWeights(workers map[string]worker.Worker) int {
 	return total
 }
 
-// TODO
-// Listen to new/delete workers
+// TODO: Move to another layer, provider logic
+// Listen to workers creation and deletion events
 func (o *orchestrator) Listen() error {
-	o.server.Post("/worker/:id", func(c *fiber.Ctx) error {
-		workerID := c.Params("id")
-		o.mut.RLock()
-		_, ok := o.workers[workerID]
-		o.mut.RUnlock()
-		if !ok {
-			logrus.
-				WithField("worker-id", workerID).
-				Infof("worker %s:%s registered", c.IP(), c.Port())
-			o.mut.Lock()
-			o.workers[workerID] = worker.New(workerID, 1, nil)
-			o.mut.Unlock()
-		}
+	log.Infof("master %s:%s", net.IP(), o.opts.Port)
 
-		c.Status(http.StatusCreated)
-		return c.SendString(fmt.Sprintf("Hello %s, World 👋!", workerID))
+	o.server.Post("/worker/:id", func(c *fiber.Ctx) error {
+		workerID := string(append([]byte{}, c.Params("id")[:]...))
+		wb, _ := o.parseWorkerBody(c)
+
+		o.addWorker(workerID, wb.Weight)
+
+		return nil
 	})
 
-	return o.server.Listen(":9050")
+	o.server.Delete("/worker/:id", func(c *fiber.Ctx) error {
+		workerID := string(append([]byte{}, c.Params("id")[:]...))
+
+		o.delWorker(workerID)
+
+		return nil
+	})
+
+	return o.server.Listen(":" + o.opts.Port)
+}
+
+func (o *orchestrator) addWorker(ID string, weight int) {
+	o.mut.Lock()
+	defer o.mut.Unlock()
+
+	_, ok := o.workers[ID]
+	if ok {
+		log.
+			WithField("worker-id", ID).
+			Infof("worker already registered")
+		return
+	}
+
+	o.totalWeight += weight
+	o.workers[ID] = worker.New(ID, weight, requester.New())
+}
+
+func (o *orchestrator) delWorker(ID string) {
+	o.mut.Lock()
+	defer o.mut.Unlock()
+
+	_, ok := o.workers[ID]
+	if !ok {
+		return
+	}
+
+	o.totalWeight -= o.workers[ID].Weight()
+	delete(o.workers, ID)
+
+	log.
+		WithField("worker-id", ID).
+		Info("worker deleted")
+}
+
+func (o orchestrator) parseWorkerBody(c *fiber.Ctx) (workerBody, error) {
+	var wb workerBody
+	err := c.BodyParser(&wb)
+
+	if wb.Weight < 1 {
+		wb.Weight = 1
+	}
+
+	return wb, err
 }
 
 // AssignWorkload distribute workload among workers
 func (o orchestrator) AssignWorkload(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error {
 	wg := &sync.WaitGroup{}
+	o.mut.RLock()
 	wg.Add(len(o.workers))
+	o.mut.RUnlock()
 
 	for _, w := range o.workers {
 		w := w
@@ -90,10 +147,11 @@ func (o orchestrator) AssignWorkload(ctx context.Context, wl model.Workload, met
 
 // calcRequests calculate request amount for a specific worker
 func (o orchestrator) calcRequests(wID string, total int) int {
+	o.mut.RLock()
+	defer o.mut.RUnlock()
 	if len(o.workers) == 1 {
 		return total
 	}
-
 	ratio := float64(o.workers[wID].Weight()) / float64(o.totalWeight)
 	return int(float64(total) * ratio)
 }

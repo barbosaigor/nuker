@@ -16,16 +16,16 @@ type Worker interface {
 }
 
 type worker struct {
-	id      string
-	weight  int
-	courier repository.Courier
+	id        string
+	weight    int
+	requester repository.Requester
 }
 
-func New(ID string, weight int, courier repository.Courier) Worker {
+func New(ID string, weight int, requester repository.Requester) Worker {
 	return worker{
-		id:      ID,
-		weight:  weight,
-		courier: courier,
+		id:        ID,
+		weight:    weight,
+		requester: requester,
 	}
 }
 
@@ -34,7 +34,7 @@ func (w worker) Do(ctx context.Context, wl model.Workload, metChan chan<- *metri
 		WithField("worker", w.id).
 		Tracef("request count: %d", wl.RequestsCount)
 
-	_ = w.courier.Do(ctx, wl, metChan)
+	_ = w.requester.Assign(ctx, wl, metChan)
 }
 
 func (w worker) ID() string {

@@ -12,7 +12,8 @@ import (
 type orchestratorParams struct {
 	fx.In
 
-	Worker worker.Worker `optional:"true"`
+	Worker  worker.Worker `optional:"true"`
+	Options orchestrator.Options
 }
 
 func Module() fx.Option {
@@ -25,14 +26,19 @@ func Module() fx.Option {
 	return fx.Options(
 		opt,
 		fx.Provide(
+			func() orchestrator.Options {
+				return orchestrator.Options{
+					Port: cli.Port,
+				}
+			},
 			func(params orchestratorParams) orchestrator.Orchestrator {
-				var workers map[string]worker.Worker
+				workers := map[string]worker.Worker{}
 
 				if params.Worker != nil {
-					workers = map[string]worker.Worker{params.Worker.ID(): params.Worker}
+					workers[params.Worker.ID()] = params.Worker
 				}
 
-				return orchestrator.New(workers)
+				return orchestrator.New(workers, params.Options)
 			},
 		),
 	)

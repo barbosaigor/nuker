@@ -20,19 +20,23 @@ type Pipeline interface {
 }
 
 type pipeline struct {
+	opts     Options
 	probeSvc probe.Probe
 	orqSvc   orchestrator.Orchestrator
 }
 
-func New(probeSvc probe.Probe, orqSvc orchestrator.Orchestrator) Pipeline {
+func New(probeSvc probe.Probe, orqSvc orchestrator.Orchestrator, opts Options) Pipeline {
 	return &pipeline{
 		probeSvc: probeSvc,
 		orqSvc:   orqSvc,
+		opts:     opts,
 	}
 }
 
 func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
 	log.Debug("starting pipeline")
+
+	go p.orqSvc.Listen()
 
 	metChan := make(chan *metrics.NetworkMetrics)
 	defer close(metChan)
@@ -134,8 +138,8 @@ func (p *pipeline) calcRequests(start, end, curr time.Duration, min, max int) in
 		max = min
 	}
 
-	a := float64(float64(curr-start)/float64(time.Second)) * float64(max-min)
-	b := float64(float64(end-start) / float64(time.Second))
+	a := (float64(curr-start) / float64(time.Second)) * float64(max-min)
+	b := float64(end-start) / float64(time.Second)
 	if b == 0 {
 		return 0
 	}

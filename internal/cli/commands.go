@@ -21,8 +21,7 @@ var Verbose bool
 var Quiet bool
 var NoLogFile bool
 var LogFile string
-
-// Exec flags
+var Port string
 var Master bool
 var Worker bool
 
@@ -88,6 +87,7 @@ func ExecCli() error {
 	Cli.PersistentFlags().BoolVar(&NoLogFile, "disable-log-file", false, "disable-log-file doesn't create log file")
 	Cli.PersistentFlags().StringVar(&LogFile, "log-file", "", "log-file defines log file name")
 
+	Cli.PersistentFlags().StringVar(&Port, "port", "33001", "port defines which port master server should listen")
 	Cli.PersistentFlags().BoolVar(&Master, "master", false, "master makes nuker a master application, awaiting for workers come out")
 	Cli.PersistentFlags().BoolVar(&Worker, "worker", false, "worker makes nuker a worker, and need to connect to master")
 

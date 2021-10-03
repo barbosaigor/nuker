@@ -1,4 +1,4 @@
-package courier
+package requester
 
 import (
 	"context"
@@ -12,17 +12,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type courier struct {
+type requester struct {
 	pub publisher.Publisher
 }
 
-func New(pub publisher.Publisher) repository.Courier {
-	return &courier{
+func New(pub publisher.Publisher) repository.Requester {
+	return &requester{
 		pub: pub,
 	}
 }
 
-func (c courier) Do(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error {
+func (c requester) Assign(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(wl.RequestsCount)
 

@@ -7,6 +7,6 @@ import (
 	"github.com/barbosaigor/nuker/pkg/metrics"
 )
 
-type Courier interface {
-	Do(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error
+type Requester interface {
+	Assign(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error
 }
