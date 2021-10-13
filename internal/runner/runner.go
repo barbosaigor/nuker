@@ -6,21 +6,21 @@ import (
 	"os"
 
 	"github.com/barbosaigor/nuker/internal/cli"
-	"github.com/barbosaigor/nuker/internal/domain/service/pipeline"
+	m "github.com/barbosaigor/nuker/internal/domain/service/master"
 	"github.com/barbosaigor/nuker/pkg/config"
 	pkgrunner "github.com/barbosaigor/nuker/pkg/runner"
 	log "github.com/sirupsen/logrus"
 )
 
 type runner struct {
-	pipeline pipeline.Pipeline
-	opts     Options
+	master m.Master
+	opts   Options
 }
 
-func New(pipeline pipeline.Pipeline, opts Options) pkgrunner.Runner {
+func New(master m.Master, opts Options) pkgrunner.Runner {
 	return &runner{
-		pipeline: pipeline,
-		opts:     opts,
+		master: master,
+		opts:   opts,
 	}
 }
 
@@ -47,7 +47,12 @@ func (r *runner) exec(ctx context.Context) error {
 		return nil
 	}
 
-	return r.pipeline.Run(ctx, *cfg)
+	if cli.Master {
+		return r.master.Run(ctx, *cfg)
+	}
+
+	log.Warn("worker not implemented yet")
+	return nil
 }
 
 func (r *runner) run(ctx context.Context) error {
@@ -65,5 +70,5 @@ func (r *runner) run(ctx context.Context) error {
 		return err
 	}
 
-	return r.pipeline.Run(ctx, *cfg)
+	return r.master.Run(ctx, *cfg)
 }

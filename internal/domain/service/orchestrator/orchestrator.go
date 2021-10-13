@@ -5,32 +5,27 @@ import (
 	"sync"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
+	"github.com/barbosaigor/nuker/internal/domain/service/requester"
 	"github.com/barbosaigor/nuker/internal/domain/service/worker"
-	"github.com/barbosaigor/nuker/internal/provider/resty/requester"
 	"github.com/barbosaigor/nuker/pkg/metrics"
-	"github.com/barbosaigor/nuker/pkg/net"
-	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 )
 
 type Orchestrator interface {
-	Listen() error
-	AssignWorkload(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error
+	WorkloadAssigner
+	AddWorker(ID string, weight int)
+	DelWorker(ID string)
+	TotalWorkers() int
 }
 
 type orchestrator struct {
 	workers     map[string]worker.Worker
 	totalWeight int
-	server      *fiber.App
 	mut         *sync.RWMutex
-	opts        Options
+	reqFactory  requester.Factory
 }
 
-type workerBody struct {
-	Weight int
-}
-
-func New(workers map[string]worker.Worker, opts Options) Orchestrator {
+func New(workers map[string]worker.Worker, reqFactory requester.Factory) Orchestrator {
 	if workers == nil {
 		workers = map[string]worker.Worker{}
 	}
@@ -38,9 +33,8 @@ func New(workers map[string]worker.Worker, opts Options) Orchestrator {
 	return &orchestrator{
 		workers:     workers,
 		totalWeight: sumWeights(workers),
-		server:      fiber.New(),
 		mut:         &sync.RWMutex{},
-		opts:        opts,
+		reqFactory:  reqFactory,
 	}
 }
 
@@ -52,32 +46,7 @@ func sumWeights(workers map[string]worker.Worker) int {
 	return total
 }
 
-// TODO: Move to another layer, provider logic
-// Listen to workers creation and deletion events
-func (o *orchestrator) Listen() error {
-	log.Infof("master %s:%s", net.IP(), o.opts.Port)
-
-	o.server.Post("/worker/:id", func(c *fiber.Ctx) error {
-		workerID := string(append([]byte{}, c.Params("id")[:]...))
-		wb, _ := o.parseWorkerBody(c)
-
-		o.addWorker(workerID, wb.Weight)
-
-		return nil
-	})
-
-	o.server.Delete("/worker/:id", func(c *fiber.Ctx) error {
-		workerID := string(append([]byte{}, c.Params("id")[:]...))
-
-		o.delWorker(workerID)
-
-		return nil
-	})
-
-	return o.server.Listen(":" + o.opts.Port)
-}
-
-func (o *orchestrator) addWorker(ID string, weight int) {
+func (o *orchestrator) AddWorker(ID string, weight int) {
 	o.mut.Lock()
 	defer o.mut.Unlock()
 
@@ -90,10 +59,10 @@ func (o *orchestrator) addWorker(ID string, weight int) {
 	}
 
 	o.totalWeight += weight
-	o.workers[ID] = worker.New(ID, weight, requester.New())
+	o.workers[ID] = worker.New(ID, weight, o.reqFactory.Create())
 }
 
-func (o *orchestrator) delWorker(ID string) {
+func (o *orchestrator) DelWorker(ID string) {
 	o.mut.Lock()
 	defer o.mut.Unlock()
 
@@ -108,17 +77,6 @@ func (o *orchestrator) delWorker(ID string) {
 	log.
 		WithField("worker-id", ID).
 		Info("worker deleted")
-}
-
-func (o orchestrator) parseWorkerBody(c *fiber.Ctx) (workerBody, error) {
-	var wb workerBody
-	err := c.BodyParser(&wb)
-
-	if wb.Weight < 1 {
-		wb.Weight = 1
-	}
-
-	return wb, err
 }
 
 // AssignWorkload distribute workload among workers
@@ -154,4 +112,10 @@ func (o orchestrator) calcRequests(wID string, total int) int {
 	}
 	ratio := float64(o.workers[wID].Weight()) / float64(o.totalWeight)
 	return int(float64(total) * ratio)
+}
+
+func (o orchestrator) TotalWorkers() int {
+	o.mut.RLock()
+	defer o.mut.RUnlock()
+	return len(o.workers)
 }

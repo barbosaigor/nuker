@@ -36,8 +36,6 @@ func New(probeSvc probe.Probe, orqSvc orchestrator.Orchestrator, opts Options) P
 func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
 	log.Debug("starting pipeline")
 
-	go p.orqSvc.Listen()
-
 	metChan := make(chan *metrics.NetworkMetrics)
 	defer close(metChan)
 

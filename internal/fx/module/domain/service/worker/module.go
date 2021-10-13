@@ -2,8 +2,8 @@ package worker
 
 import (
 	"github.com/barbosaigor/nuker/internal/domain/service/publisher"
+	"github.com/barbosaigor/nuker/internal/domain/service/requester"
 	"github.com/barbosaigor/nuker/internal/domain/service/worker"
-	"github.com/barbosaigor/nuker/internal/domain/service/worker/requester"
 	fxpublisher "github.com/barbosaigor/nuker/internal/fx/module/domain/service/publisher"
 	"go.uber.org/fx"
 )
