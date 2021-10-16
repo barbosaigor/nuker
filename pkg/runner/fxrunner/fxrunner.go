@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/barbosaigor/nuker/pkg/runner"
-	log "github.com/sirupsen/logrus"
 	"go.uber.org/fx"
 )
 
@@ -23,10 +22,5 @@ func Run(opt fx.Option) error {
 }
 
 func startRunner(ctx context.Context, r runner.Runner) error {
-	if err := r.Run(ctx); err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
+	return r.Run(ctx)
 }

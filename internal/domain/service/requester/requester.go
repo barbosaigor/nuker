@@ -6,17 +6,20 @@ import (
 	"sync"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
-	"github.com/barbosaigor/nuker/internal/domain/repository"
 	"github.com/barbosaigor/nuker/internal/domain/service/publisher"
 	"github.com/barbosaigor/nuker/pkg/metrics"
 	log "github.com/sirupsen/logrus"
 )
 
+type Requester interface {
+	Assign(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error
+}
+
 type requester struct {
 	pub publisher.Publisher
 }
 
-func New(pub publisher.Publisher) repository.Requester {
+func New(pub publisher.Publisher) Requester {
 	return &requester{
 		pub: pub,
 	}
@@ -32,7 +35,7 @@ func (c requester) Assign(ctx context.Context, wl model.Workload, metChan chan<-
 
 			met, err := c.pub.Publish(ctx, wl.Cfg)
 			if errors.Is(err, model.ErrProtNotSupported) {
-				log.Debug(err)
+				log.Trace(err)
 				return
 			}
 

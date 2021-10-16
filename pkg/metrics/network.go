@@ -11,7 +11,7 @@ type NetworkMetrics struct {
 	StatusCode   int
 	ResponseTime time.Duration
 	Body         string
-	Err          error
+	Err          string
 }
 
 func (n NetworkMetrics) String() string {

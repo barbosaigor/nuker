@@ -9,10 +9,7 @@ import (
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
 	"github.com/barbosaigor/nuker/internal/domain/service/orchestrator"
-	"github.com/barbosaigor/nuker/internal/domain/service/probe"
 	"github.com/barbosaigor/nuker/pkg/config"
-	"github.com/barbosaigor/nuker/pkg/metrics"
-	"golang.org/x/sync/errgroup"
 )
 
 type Pipeline interface {
@@ -20,45 +17,17 @@ type Pipeline interface {
 }
 
 type pipeline struct {
-	opts     Options
-	probeSvc probe.Probe
-	orqSvc   orchestrator.Orchestrator
+	orqSvc orchestrator.Orchestrator
 }
 
-func New(probeSvc probe.Probe, orqSvc orchestrator.Orchestrator, opts Options) Pipeline {
+func New(orqSvc orchestrator.Orchestrator) Pipeline {
 	return &pipeline{
-		probeSvc: probeSvc,
-		orqSvc:   orqSvc,
-		opts:     opts,
+		orqSvc: orqSvc,
 	}
 }
 
 func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
-	log.Debug("starting pipeline")
-
-	metChan := make(chan *metrics.NetworkMetrics)
-	defer close(metChan)
-
-	cCtx, cancelCtx := context.WithCancel(ctx)
-
-	errG := &errgroup.Group{}
-
-	errG.Go(func() error {
-		return p.probeSvc.Listen(cCtx, metChan)
-	})
-
-	errG.Go(func() error {
-		defer cancelCtx()
-
-		p.run(cCtx, cfg, metChan)
-
-		return nil
-	})
-
-	return errG.Wait()
-}
-
-func (p *pipeline) run(ctx context.Context, cfg config.Config, metChan chan<- *metrics.NetworkMetrics) {
+	log.Trace("starting pipeline")
 	log.Tracef("%+v", cfg)
 
 	for _, stg := range cfg.Stages {
@@ -78,16 +47,19 @@ func (p *pipeline) run(ctx context.Context, cfg config.Config, metChan chan<- *m
 
 					log.Info("running container " + container.Name)
 
-					p.startTicker(ctx, container, metChan)
+					p.startTicker(ctx, container)
 				}()
 			}
 
 			stepWg.Wait()
 		}
 	}
+
+	log.Trace("pipeline finished")
+	return nil
 }
 
-func (p *pipeline) startTicker(ctx context.Context, container config.Container, metChan chan<- *metrics.NetworkMetrics) {
+func (p *pipeline) startTicker(ctx context.Context, container config.Container) {
 	tCtx, cancelFn := context.WithTimeout(ctx, time.Second*time.Duration(container.Duration+container.HoldFor))
 	defer cancelFn()
 
@@ -102,7 +74,7 @@ func (p *pipeline) startTicker(ctx context.Context, container config.Container, 
 			return
 		case <-ticker.C:
 			log.Trace("do request")
-			p.runContainer(tCtx, startTime, container, metChan)
+			p.runContainer(tCtx, startTime, container)
 		}
 	}
 }
@@ -110,8 +82,7 @@ func (p *pipeline) startTicker(ctx context.Context, container config.Container, 
 func (p *pipeline) runContainer(
 	ctx context.Context,
 	startTime time.Duration,
-	container config.Container,
-	metChan chan<- *metrics.NetworkMetrics) {
+	container config.Container) {
 
 	currTime := time.Duration(time.Now().UnixNano())
 	endTime := time.Duration(container.Duration * int(time.Second))
@@ -124,7 +95,7 @@ func (p *pipeline) runContainer(
 		Cfg:           container.Network,
 	}
 
-	_ = p.orqSvc.AssignWorkload(ctx, wl, metChan)
+	p.orqSvc.DistributeWorkload(ctx, wl)
 }
 
 func (p *pipeline) calcRequests(start, end, curr time.Duration, min, max int) int {

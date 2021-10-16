@@ -1,19 +1,18 @@
 package worker
 
 import (
-	"github.com/barbosaigor/nuker/internal/domain/service/publisher"
 	"github.com/barbosaigor/nuker/internal/domain/service/requester"
 	"github.com/barbosaigor/nuker/internal/domain/service/worker"
-	fxpublisher "github.com/barbosaigor/nuker/internal/fx/module/domain/service/publisher"
+	requesterfx "github.com/barbosaigor/nuker/internal/fx/module/domain/service/requester"
 	"go.uber.org/fx"
 )
 
-func Module(ID string, weight int) fx.Option {
+func Module(ID, masterURI string, weight int) fx.Option {
 	return fx.Options(
-		fxpublisher.Module(),
+		requesterfx.Module(),
 		fx.Provide(
-			func(pub publisher.Publisher) worker.Worker {
-				return worker.New(ID, weight, requester.New(pub))
+			func(req requester.Requester) worker.Worker {
+				return worker.New(ID, masterURI, weight, req)
 			},
 		),
 	)

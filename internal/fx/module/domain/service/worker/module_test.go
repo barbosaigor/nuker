@@ -10,9 +10,9 @@ import (
 
 func TestModule(t *testing.T) {
 	app := fx.New(
-		Module("w-test", 1),
-		fx.Invoke(func(s worker.Worker) {
-			assert.NotNil(t, s)
+		Module("w-test", "http://master.io", 1),
+		fx.Invoke(func(w worker.Worker) {
+			assert.NotNil(t, w)
 		}),
 	)
 

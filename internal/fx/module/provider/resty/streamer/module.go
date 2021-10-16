@@ -9,7 +9,11 @@ import (
 func Module() fx.Option {
 	return fx.Options(
 		fx.Provide(
-			resty.New,
+			func() *resty.Client {
+				client := resty.New()
+				client.SetRetryCount(3)
+				return client
+			},
 			streamer.New,
 		),
 	)

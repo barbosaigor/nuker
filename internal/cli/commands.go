@@ -16,6 +16,11 @@ var MaxFlagExecCmd int
 var DurationFlagExecCmd int
 var MethodFlagExecCmd string
 
+// Worker flags
+var MasterURI string
+var WorkerID string
+var WorkerWeight int
+
 // Global flags
 var Verbose bool
 var Quiet bool
@@ -28,6 +33,7 @@ var MinWorkers int
 
 var IsExec bool
 var IsRun bool
+var IsWorker bool
 
 var Args []string
 
@@ -47,6 +53,18 @@ var ExecCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		IsExec = true
+		Args = args
+	},
+}
+
+var WorkerCmd = &cobra.Command{
+	Use:     "worker [MASTER URI]",
+	Short:   "worker connects to a master, and execute workloads",
+	Example: "nuker worker http://master.io",
+	Args:    cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		IsWorker = true
+		MasterURI = args[0]
 		Args = args
 	},
 }
@@ -93,7 +111,10 @@ func ExecCli() error {
 	Cli.PersistentFlags().BoolVar(&Worker, "worker", false, "worker makes nuker a worker, and need to connect to master")
 	Cli.PersistentFlags().IntVar(&MinWorkers, "min-workers", 1, "min-workers defines minimum worker count to run the pipeline")
 
-	Cli.AddCommand(VersionCmd, ExecCmd, RunCmd)
+	WorkerCmd.Flags().StringVar(&WorkerID, "id", "", "id defines worker ID. It should be unique among workers")
+	WorkerCmd.Flags().IntVar(&WorkerWeight, "weight", 1, "weight defines worker weight")
+
+	Cli.AddCommand(VersionCmd, ExecCmd, WorkerCmd, RunCmd)
 
 	return Cli.Execute()
 }

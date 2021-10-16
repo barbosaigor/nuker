@@ -8,6 +8,7 @@ import (
 
 	"github.com/barbosaigor/nuker/internal/cli"
 	masterfx "github.com/barbosaigor/nuker/internal/fx/module/domain/service/master"
+	"github.com/barbosaigor/nuker/internal/fx/module/domain/service/worker"
 	"github.com/barbosaigor/nuker/internal/runner"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/fx"
@@ -39,6 +40,7 @@ func Module() fx.Option {
 		fx.Logger(newFxLooger(logger)),
 		fx.Provide(context.Background),
 		masterfx.Module(),
+		worker.Module(cli.WorkerID, cli.MasterURI, cli.WorkerWeight),
 		fx.Provide(
 			runner.LoadCfg,
 			runner.New,
