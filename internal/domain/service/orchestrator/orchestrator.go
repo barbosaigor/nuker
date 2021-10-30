@@ -39,18 +39,6 @@ func (ws wlWorker) clone() wlWorker {
 	return ws
 }
 
-func (ws *wlWorker) pop() (model.Workload, bool) {
-	if len(ws.workloads) == 0 {
-		return model.Workload{}, false
-	}
-
-	// TODO: optmize, use cyclic queue?
-	wl := ws.workloads[0]
-	ws.workloads = append([]model.Workload{}, ws.workloads[1:]...)
-
-	return wl, true
-}
-
 func (ws *wlWorker) push(wl model.Workload) {
 	ws.workloads = append(ws.workloads, wl)
 }
@@ -123,7 +111,7 @@ func (o *orchestrator) FlushWorker(ID string) {
 }
 
 func (o *orchestrator) GarbageCollectWorkers() {
-	// TODO: tweak
+	// TODO: tweak, should be configurable
 	const workerTTL = 15 * time.Second
 	for _, w := range o.copyWorkers() {
 		if time.Now().After(w.lastFlush.Add(workerTTL)) {
@@ -206,7 +194,6 @@ func (o *orchestrator) DelWorker(ID string) {
 func (o orchestrator) DistributeWorkload(ctx context.Context, wl model.Workload) {
 	o.GarbageCollectWorkers()
 
-	// TODO: data race, create workers copy
 	for _, w := range o.copyWorkers() {
 		workerWL := model.Workload{
 			RequestsCount: o.calcRequests(w.ID, wl.RequestsCount),
