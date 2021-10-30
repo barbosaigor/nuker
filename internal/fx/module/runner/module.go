@@ -5,9 +5,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/barbosaigor/nuker/internal/cli"
-	"github.com/barbosaigor/nuker/internal/fx/module/domain/service/pipeline"
+	masterfx "github.com/barbosaigor/nuker/internal/fx/module/domain/service/master"
+	"github.com/barbosaigor/nuker/internal/fx/module/domain/service/worker"
 	"github.com/barbosaigor/nuker/internal/runner"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/fx"
@@ -23,6 +25,14 @@ func Module() fx.Option {
 
 	if cli.Verbose {
 		log.SetLevel(log.TraceLevel)
+	} else if strings.EqualFold(cli.LogLevel, "trace") {
+		log.SetLevel(log.TraceLevel)
+	} else if strings.EqualFold(cli.LogLevel, "debug") {
+		log.SetLevel(log.DebugLevel)
+	} else if strings.EqualFold(cli.LogLevel, "warn") {
+		log.SetLevel(log.WarnLevel)
+	} else if strings.EqualFold(cli.LogLevel, "error") {
+		log.SetLevel(log.ErrorLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}
@@ -38,7 +48,8 @@ func Module() fx.Option {
 	return fx.Options(
 		fx.Logger(newFxLooger(logger)),
 		fx.Provide(context.Background),
-		pipeline.Module(),
+		masterfx.Module(),
+		worker.Module(cli.WorkerID, cli.MasterURI, cli.WorkerWeight),
 		fx.Provide(
 			runner.LoadCfg,
 			runner.New,

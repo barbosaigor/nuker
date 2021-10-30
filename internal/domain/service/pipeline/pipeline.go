@@ -2,18 +2,14 @@ package pipeline
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
-	"github.com/barbosaigor/nuker/internal/domain/service/probe"
-	"github.com/barbosaigor/nuker/internal/domain/service/publisher"
+	"github.com/barbosaigor/nuker/internal/domain/service/orchestrator"
 	"github.com/barbosaigor/nuker/pkg/config"
-	"github.com/barbosaigor/nuker/pkg/metrics"
-	"golang.org/x/sync/errgroup"
 )
 
 type Pipeline interface {
@@ -21,43 +17,17 @@ type Pipeline interface {
 }
 
 type pipeline struct {
-	pubSvc   publisher.Publisher
-	probeSvc probe.Probe
+	orqSvc orchestrator.Orchestrator
 }
 
-func New(pub publisher.Publisher, probeSvc probe.Probe) Pipeline {
+func New(orqSvc orchestrator.Orchestrator) Pipeline {
 	return &pipeline{
-		pubSvc:   pub,
-		probeSvc: probeSvc,
+		orqSvc: orqSvc,
 	}
 }
 
 func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
-	log.Debug("starting pipeline")
-
-	metChan := make(chan *metrics.NetworkMetrics)
-	defer close(metChan)
-
-	cCtx, cancelCtx := context.WithCancel(ctx)
-
-	errG := &errgroup.Group{}
-
-	errG.Go(func() error {
-		return p.probeSvc.Listen(cCtx, metChan)
-	})
-
-	errG.Go(func() error {
-		defer cancelCtx()
-
-		p.run(cCtx, cfg, metChan)
-
-		return nil
-	})
-
-	return errG.Wait()
-}
-
-func (p *pipeline) run(ctx context.Context, cfg config.Config, metChan chan<- *metrics.NetworkMetrics) {
+	log.Trace("starting pipeline")
 	log.Tracef("%+v", cfg)
 
 	for _, stg := range cfg.Stages {
@@ -77,16 +47,19 @@ func (p *pipeline) run(ctx context.Context, cfg config.Config, metChan chan<- *m
 
 					log.Info("running container " + container.Name)
 
-					p.startTicker(ctx, container, metChan)
+					p.startTicker(ctx, container)
 				}()
 			}
 
 			stepWg.Wait()
 		}
 	}
+
+	log.Trace("pipeline finished")
+	return nil
 }
 
-func (p *pipeline) startTicker(ctx context.Context, container config.Container, metChan chan<- *metrics.NetworkMetrics) {
+func (p *pipeline) startTicker(ctx context.Context, container config.Container) {
 	tCtx, cancelFn := context.WithTimeout(ctx, time.Second*time.Duration(container.Duration+container.HoldFor))
 	defer cancelFn()
 
@@ -101,7 +74,7 @@ func (p *pipeline) startTicker(ctx context.Context, container config.Container, 
 			return
 		case <-ticker.C:
 			log.Trace("do request")
-			p.runContainer(tCtx, startTime, container, metChan)
+			p.runContainer(tCtx, startTime, container)
 		}
 	}
 }
@@ -109,35 +82,20 @@ func (p *pipeline) startTicker(ctx context.Context, container config.Container, 
 func (p *pipeline) runContainer(
 	ctx context.Context,
 	startTime time.Duration,
-	container config.Container,
-	metChan chan<- *metrics.NetworkMetrics) {
+	container config.Container) {
 
 	currTime := time.Duration(time.Now().UnixNano())
 	endTime := time.Duration(container.Duration * int(time.Second))
 	reqCount := p.calcRequests(startTime, endTime, currTime, container.Min, container.Max)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(reqCount)
-
 	log.Tracef("request count: %d", reqCount)
 
-	for i := 0; i < reqCount; i++ {
-		go func() {
-			defer wg.Done()
-
-			met, err := p.pubSvc.Publish(ctx, container.Network)
-			if errors.Is(err, model.ErrProtNotSupported) {
-				log.Debug(err)
-				return
-			}
-
-			if met != nil {
-				metChan <- met
-			}
-		}()
+	wl := model.Workload{
+		RequestsCount: reqCount,
+		Cfg:           container.Network,
 	}
 
-	wg.Wait()
+	p.orqSvc.DistributeWorkload(ctx, wl)
 }
 
 func (p *pipeline) calcRequests(start, end, curr time.Duration, min, max int) int {
@@ -149,8 +107,8 @@ func (p *pipeline) calcRequests(start, end, curr time.Duration, min, max int) in
 		max = min
 	}
 
-	a := float64(float64(curr-start)/float64(time.Second)) * float64(max-min)
-	b := float64(float64(end-start) / float64(time.Second))
+	a := (float64(curr-start) / float64(time.Second)) * float64(max-min)
+	b := float64(end-start) / float64(time.Second)
 	if b == 0 {
 		return 0
 	}

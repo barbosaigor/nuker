@@ -2,15 +2,15 @@ package pipeline
 
 import (
 	"github.com/barbosaigor/nuker/internal/domain/service/pipeline"
-	fxprobe "github.com/barbosaigor/nuker/internal/fx/module/domain/service/probe"
-	fxpublisher "github.com/barbosaigor/nuker/internal/fx/module/domain/service/publisher"
+	orchestratorfx "github.com/barbosaigor/nuker/internal/fx/module/domain/service/orchestrator"
+	probefx "github.com/barbosaigor/nuker/internal/fx/module/domain/service/probe"
 	"go.uber.org/fx"
 )
 
 func Module() fx.Option {
 	return fx.Options(
-		fxpublisher.Module(),
-		fxprobe.Module(),
+		probefx.Module(),
+		orchestratorfx.Module(),
 		fx.Provide(
 			pipeline.New,
 		),

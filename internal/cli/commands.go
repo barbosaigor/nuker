@@ -16,14 +16,25 @@ var MaxFlagExecCmd int
 var DurationFlagExecCmd int
 var MethodFlagExecCmd string
 
+// Worker flags
+var MasterURI string
+var WorkerID string
+var WorkerWeight int
+
 // Global flags
 var Verbose bool
+var LogLevel string
 var Quiet bool
 var NoLogFile bool
 var LogFile string
+var Port string
+var Master bool
+var Worker bool
+var MinWorkers int
 
 var IsExec bool
 var IsRun bool
+var IsWorker bool
 
 var Args []string
 
@@ -43,6 +54,18 @@ var ExecCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		IsExec = true
+		Args = args
+	},
+}
+
+var WorkerCmd = &cobra.Command{
+	Use:     "worker [MASTER URI]",
+	Short:   "worker connects to a master, and execute workloads",
+	Example: "nuker worker http://master.io",
+	Args:    cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		IsWorker = true
+		MasterURI = args[0]
 		Args = args
 	},
 }
@@ -81,10 +104,19 @@ func ExecCli() error {
 	ExecCmd.MarkFlagRequired("duration")
 
 	Cli.PersistentFlags().BoolVar(&Verbose, "verbose", false, "verbose shows detailed logs")
+	Cli.PersistentFlags().StringVar(&LogLevel, "log-level", "", "log-level defines which set of log should be printed out")
 	Cli.PersistentFlags().BoolVar(&NoLogFile, "disable-log-file", false, "disable-log-file doesn't create log file")
 	Cli.PersistentFlags().StringVar(&LogFile, "log-file", "", "log-file defines log file name")
 
-	Cli.AddCommand(VersionCmd, ExecCmd, RunCmd)
+	Cli.PersistentFlags().StringVar(&Port, "port", "33001", "port defines which port master server should listen")
+	Cli.PersistentFlags().BoolVar(&Master, "master", false, "master makes nuker a master application, awaiting for workers come out")
+	Cli.PersistentFlags().BoolVar(&Worker, "worker", false, "worker makes nuker a worker, and need to connect to master")
+	Cli.PersistentFlags().IntVar(&MinWorkers, "min-workers", 1, "min-workers defines how many workers should master has before start pipeline (default 1)")
+
+	WorkerCmd.Flags().StringVar(&WorkerID, "id", "", "id defines worker ID. It should be unique among workers")
+	WorkerCmd.Flags().IntVar(&WorkerWeight, "weight", 1, "weight defines worker weight (default 1)")
+
+	Cli.AddCommand(VersionCmd, ExecCmd, WorkerCmd, RunCmd)
 
 	return Cli.Execute()
 }

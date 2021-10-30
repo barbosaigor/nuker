@@ -10,13 +10,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Probe listens to metrics incoming and operate metrics info
+// Probe listens to metrics incoming and operates metrics info
 type Probe interface {
 	Listen(ctx context.Context, met <-chan *metrics.NetworkMetrics) error
 }
 
 type probe struct {
-	// logReader write metrics info into either a file, stdout, networking or etc.
 	logger  bufwriter.BufWriter
 	metRate *MetricRate
 	mut     *sync.Mutex
@@ -55,7 +54,7 @@ func (p *probe) writeMetr(ctx context.Context, m *metrics.NetworkMetrics) error 
 		return nil
 	}
 
-	log.Debug("metric: " + m.String())
+	log.Trace("metric: " + m.String())
 	p.mut.Lock()
 	defer p.mut.Unlock()
 	n, err := io.WriteString(p.logger, m.String())
@@ -63,7 +62,7 @@ func (p *probe) writeMetr(ctx context.Context, m *metrics.NetworkMetrics) error 
 		log.Error("Error to write metric in probe writer")
 	}
 
-	log.Debugf("metrics with %d bytes wrote to writer", n)
+	log.Tracef("metrics with %d bytes wrote to writer", n)
 
 	return err
 }

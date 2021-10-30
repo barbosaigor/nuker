@@ -7,9 +7,9 @@ stages:
         containers:
           - name: Warm up fees
             duration: 60 # seconds
-            holdFor: 30 # wait more 30 seconds with final traffic
-            min: 100 # 100 requests per seconds
-            max: 200 # 200 requests per seconds
+            holdFor: 30 # wait more 30 seconds with final traffic (max)
+            min: 100 # 100 requests per second
+            max: 200 # 200 requests per second
             network:
               protocol: http # default
               path: /fees
@@ -18,8 +18,8 @@ stages:
               body: "{\"id\": \"123\", \"quantity\": 10}"
           - name: Warm up offer
             duration: 60 # seconds
-            min: 100 # 100 requests per seconds
-            max: 200 # 200 requests per seconds
+            min: 100 # 100 requests per second
+            max: 200 # 200 requests per second
             network:
               protocol: http # default
               path: /offer
@@ -29,15 +29,15 @@ stages:
         containers:
           - name: Heavy load fees
             duration: 60 # seconds
-            min: 1000 # 100 requests per seconds
-            max: 2000 # 100 requests per seconds
+            min: 1000 # 100 requests per second
+            max: 2000 # 100 requests per second
             network:
               path: /fees
               host: "http://0.0.0.0:8080"
           - name: Heavy load offer
             duration: 60 # seconds
-            min: 1000 # 100 requests per seconds
-            max: 2000 # 100 requests per seconds
+            min: 1000 # 100 requests per second
+            max: 2000 # 100 requests per second
             network:
               path: /offer
               host: "http://0.0.0.0:8080"
@@ -47,9 +47,9 @@ stages:
         containers:
           - name: Warm up product
             duration: 60 # seconds
-            holdFor: 30 # wait more 30 seconds with final traffic
-            min: 100 # 100 requests per seconds
-            max: 200 # 200 requests per seconds
+            holdFor: 30 # wait more 30 seconds with final traffic (max)
+            min: 100 # 100 requests per second
+            max: 200 # 200 requests per second
             network:
               protocol: http # default
               path: /product
@@ -57,8 +57,8 @@ stages:
               host: "http://0.0.0.0:8080"
           - name: Warm up stock
             duration: 60 # seconds
-            min: 100 # 100 requests per seconds
-            max: 200 # 200 requests per seconds
+            min: 100 # 100 requests per second
+            max: 200 # 200 requests per second
             network:
               protocol: http # default
               path: /stock
@@ -68,15 +68,15 @@ stages:
         containers:
           - name: Heavy load product
             duration: 60 # seconds
-            min: 1000 # 100 requests per seconds
-            max: 2000 # 100 requests per seconds
+            min: 1000 # 100 requests per second
+            max: 2000 # 100 requests per second
             network:
               path: /product
               host: "http://0.0.0.0:8080"
           - name: Heavy load stock
             duration: 60 # seconds
-            min: 1000 # 100 requests per seconds
-            max: 2000 # 100 requests per seconds
+            min: 1000 # 100 requests per second
+            max: 2000 # 100 requests per second
             network:
               path: /stock
               host: "http://0.0.0.0:8080"

@@ -10,6 +10,7 @@ import (
 type MetricRate struct {
 	Success int
 	Failed  int
+	Total   int
 
 	AvgSuccess float64
 	AvgFailed  float64
@@ -57,6 +58,8 @@ func (mr *MetricRate) Append(m *metrics.NetworkMetrics) {
 	}
 
 	mr.calcAvg()
+
+	mr.Total = mr.Success + mr.Failed
 }
 
 func (mr *MetricRate) calcAvg() {

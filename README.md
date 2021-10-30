@@ -8,8 +8,8 @@ It's a suitable alternative for [JMeter](https://jmeter.apache.org/) or similar 
 ### Features  
 * High throughput with lower resource usage   
 * Easy to write configuration file with an expressive config plan   
-* Observability - realtime metrics and detailed log file  
-* TODO: Distributed load testing, easy to run your plan among your nodes  
+* Observability, realtime metrics and detailed log file  
+* Distributed load testing, easy to run your plan among nodes   
 
 ### Install  
 ```sh
@@ -77,6 +77,24 @@ stages:
               host: "http://0.0.0.0:8080"
 ```
 
+### Distributed plan 
+Distrubuted plan works with master-slave approach.  
+A master node will orchestrate all pipeline workload among slaves (workers).  
+Each worker should connect to the master nuker, following master URL.   
+
+Start a master nuker:  
+```sh
+# --min-workers defines how many workers should master wait before start pipeline (default 1)
+$ nuker run plan.yaml --master
+master URL: http://master-ip.io/
+```
+
+Connect a worker into master:  
+```sh
+$ nuker worker http://master-ip.io/ 
+```  
+
+After that, master would be able to balance the workload among workers.  
+
 ### To Do
-- [ ] Connect with another nodes, replicate plan for each node or distribute work (should be configurable which algorithm)  
-- [ ] Improve console metrics  
+- [ ] Improve console metrics, idea: [k6](https://k6.io/) console metrics  

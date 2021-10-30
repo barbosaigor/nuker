@@ -44,7 +44,7 @@ func (s streamer) Stream(ctx context.Context, cfg config.Network) (*metrics.Netw
 	}
 
 	if err != nil {
-		met.Err = err
+		met.Err = err.Error()
 		return &met, err
 	}
 

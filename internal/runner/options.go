@@ -7,6 +7,7 @@ type Operation int
 const (
 	exec = Operation(iota)
 	run
+	employee
 	unknow
 )
 
@@ -27,6 +28,10 @@ func opFromCli() Operation {
 
 	if cli.IsRun {
 		return run
+	}
+
+	if cli.IsWorker {
+		return employee
 	}
 
 	return unknow
