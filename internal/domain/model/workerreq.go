@@ -1,8 +1,8 @@
 package model
 
 type LaborContract struct {
-	Operation WorkerOp `json:"operation"`
-	Workload  Workload `json:"workload"`
+	Operation WorkerOp   `json:"operation"`
+	Workloads []Workload `json:"workloads"`
 }
 
 type WorkerOp string

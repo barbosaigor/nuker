@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
@@ -15,7 +16,9 @@ type Orchestrator interface {
 	DelWorker(ID string)
 	HasWorker(ID string) bool
 	FlushWorker(ID string)
-	TakeWorkload(ID string) (model.Workload, bool)
+	TakeWorkloads(ID string) []model.Workload
+	HasWorkload(ID string) bool
+	HasAnyWorkload() bool
 	TotalWorkers() int
 }
 
@@ -26,15 +29,30 @@ type orchestrator struct {
 }
 
 type wlWorker struct {
-	ID              string
-	weight          int
-	workload        model.Workload
-	shouldProcessWL bool
-	lastFlush       time.Time
+	ID        string
+	weight    int
+	workloads []model.Workload
+	lastFlush time.Time
 }
 
 func (ws wlWorker) clone() wlWorker {
 	return ws
+}
+
+func (ws *wlWorker) pop() (model.Workload, bool) {
+	if len(ws.workloads) == 0 {
+		return model.Workload{}, false
+	}
+
+	// TODO: optmize, use cyclic queue?
+	wl := ws.workloads[0]
+	ws.workloads = append([]model.Workload{}, ws.workloads[1:]...)
+
+	return wl, true
+}
+
+func (ws *wlWorker) push(wl model.Workload) {
+	ws.workloads = append(ws.workloads, wl)
 }
 
 func New() Orchestrator {
@@ -51,6 +69,38 @@ func (o *orchestrator) HasWorker(ID string) bool {
 
 	_, ok := o.workers[ID]
 	return ok
+}
+
+func (o *orchestrator) copyWorkers() map[string]wlWorker {
+	o.mut.RLock()
+	defer o.mut.RUnlock()
+	workers := make(map[string]wlWorker, len(o.workers))
+	for id, w := range o.workers {
+		workers[id] = w
+	}
+	return workers
+}
+
+func (o *orchestrator) HasAnyWorkload() bool {
+	for _, w := range o.copyWorkers() {
+		if o.HasWorkload(w.ID) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (o *orchestrator) HasWorkload(ID string) bool {
+	if !o.HasWorker(ID) {
+		return false
+	}
+
+	o.mut.RLock()
+	w := o.workers[ID]
+	hasWl := len(w.workloads) > 0
+	o.mut.RUnlock()
+	return hasWl
 }
 
 func (o *orchestrator) FlushWorker(ID string) {
@@ -75,8 +125,7 @@ func (o *orchestrator) FlushWorker(ID string) {
 func (o *orchestrator) GarbageCollectWorkers() {
 	// TODO: tweak
 	const workerTTL = 15 * time.Second
-	// TODO: data race, should create workers copy
-	for _, w := range o.workers {
+	for _, w := range o.copyWorkers() {
 		if time.Now().After(w.lastFlush.Add(workerTTL)) {
 			log.
 				WithField("elapsed-time", time.Until(w.lastFlush.Add(workerTTL)).String()).
@@ -88,22 +137,22 @@ func (o *orchestrator) GarbageCollectWorkers() {
 	}
 }
 
-func (o orchestrator) TakeWorkload(ID string) (model.Workload, bool) {
+func (o orchestrator) TakeWorkloads(ID string) []model.Workload {
 	o.mut.Lock()
 	defer o.mut.Unlock()
 
 	w, ok := o.workers[ID]
-	if !ok || !o.workers[ID].shouldProcessWL {
-		return w.workload, false
+	if !ok || len(w.workloads) == 0 {
+		return nil
 	}
 
-	wl := w.workload
+	wls := w.workloads
 
-	newWorker := o.workers[ID].clone()
-	newWorker.shouldProcessWL = false
+	newWorker := w.clone()
+	newWorker.workloads = nil
 	o.workers[ID] = newWorker
 
-	return wl, true
+	return wls
 }
 
 func (o *orchestrator) AddWorker(ID string, weight int) {
@@ -124,10 +173,9 @@ func (o *orchestrator) AddWorker(ID string, weight int) {
 
 	o.totalWeight += weight
 	o.workers[ID] = wlWorker{
-		ID:              ID,
-		weight:          weight,
-		shouldProcessWL: false,
-		lastFlush:       time.Now(),
+		ID:        ID,
+		weight:    weight,
+		lastFlush: time.Now(),
 	}
 
 	log.
@@ -159,7 +207,7 @@ func (o orchestrator) DistributeWorkload(ctx context.Context, wl model.Workload)
 	o.GarbageCollectWorkers()
 
 	// TODO: data race, create workers copy
-	for _, w := range o.workers {
+	for _, w := range o.copyWorkers() {
 		workerWL := model.Workload{
 			RequestsCount: o.calcRequests(w.ID, wl.RequestsCount),
 			Cfg:           wl.Cfg,
@@ -171,8 +219,7 @@ func (o orchestrator) DistributeWorkload(ctx context.Context, wl model.Workload)
 
 		o.mut.Lock()
 		newWorker := w.clone()
-		newWorker.workload = workerWL
-		newWorker.shouldProcessWL = true
+		newWorker.push(workerWL)
 		o.workers[w.ID] = newWorker
 		o.mut.Unlock()
 	}
@@ -187,7 +234,7 @@ func (o orchestrator) calcRequests(wID string, total int) int {
 		return total
 	}
 
-	ratio := float64(o.workers[wID].weight) / float64(o.totalWeight)
+	ratio := math.Max(1, float64(o.workers[wID].weight)/float64(o.totalWeight))
 	return int(float64(total) * ratio)
 }
 

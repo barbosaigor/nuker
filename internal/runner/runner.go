@@ -53,12 +53,7 @@ func (r *runner) exec(ctx context.Context) error {
 		return nil
 	}
 
-	if cli.Master {
-		return r.master.Run(ctx, *cfg)
-	}
-
-	log.Warn("worker not implemented yet")
-	return nil
+	return r.master.Run(ctx, *cfg)
 }
 
 func (r *runner) run(ctx context.Context) error {
@@ -76,12 +71,7 @@ func (r *runner) run(ctx context.Context) error {
 		return err
 	}
 
-	if cli.Master {
-		return r.master.Run(ctx, *cfg)
-	}
-
-	log.Warn("worker not implemented yet")
-	return nil
+	return r.master.Run(ctx, *cfg)
 }
 
 func (r *runner) connectWorker(ctx context.Context) (err error) {

@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/barbosaigor/nuker/internal/cli"
 	masterfx "github.com/barbosaigor/nuker/internal/fx/module/domain/service/master"
@@ -24,6 +25,14 @@ func Module() fx.Option {
 
 	if cli.Verbose {
 		log.SetLevel(log.TraceLevel)
+	} else if strings.EqualFold(cli.LogLevel, "trace") {
+		log.SetLevel(log.TraceLevel)
+	} else if strings.EqualFold(cli.LogLevel, "debug") {
+		log.SetLevel(log.DebugLevel)
+	} else if strings.EqualFold(cli.LogLevel, "warn") {
+		log.SetLevel(log.WarnLevel)
+	} else if strings.EqualFold(cli.LogLevel, "error") {
+		log.SetLevel(log.ErrorLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}

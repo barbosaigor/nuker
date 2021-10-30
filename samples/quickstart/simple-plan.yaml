@@ -6,10 +6,10 @@ stages:
       - name: Warm up
         containers:
           - name: product
-            duration: 3 # run this container for 30 seconds
+            duration: 3 # run this container for 3 seconds
             holdFor: 10 # wait more 10 seconds with final traffic (max)
-            min: 1 # start with 100 requests per second
-            max: 5 # and end up to 500 requests per second
+            min: 1 # start with 1 request per second
+            max: 50 # and end up to 50 requests per second
             network:
               protocol: http # default
               path: /product
@@ -20,7 +20,7 @@ stages:
                 "Authorization": "cGFzc3dvcmQK"
               body: "{id: 123, quantity: 10}"
           - name: stock
-            duration: 3 # run this container for 11 seconds
+            duration: 3 # run this container for 3 seconds
             holdFor: 30 # wait more 30 seconds with final traffic (max)
             min: 1 # start with 1 request per second
             max: 5 # and end up to 5 requests per second
@@ -29,10 +29,10 @@ stages:
               method: GET # default
               host: "http://0.0.0.0:8080"
           - name: fee
-            duration: 3 # run this container for 5 seconds
+            duration: 3 # run this container for 3 seconds
             holdFor: 30 # wait more 30 seconds with final traffic (max)
-            min: 1 # start with 100 request per second
-            max: 5 # and end up to 500 requests per second
+            min: 1 # start with 1 request per second
+            max: 50 # and end up to 50 requests per second
             network:
               path: /fee
               host: "http://0.0.0.0:8080"

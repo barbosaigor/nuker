@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
@@ -152,10 +153,7 @@ func (w worker) Do(ctx context.Context) error {
 			return nil
 		}
 
-		select {
-		case <-time.After(time.Second):
-		case <-w.assignWl(ctx, wr.Workload, metChan):
-		}
+		w.assignWls(ctx, wr.Workloads, metChan)
 	}
 }
 
@@ -180,16 +178,20 @@ func (w worker) sendMetrics(metChan <-chan *metrics.NetworkMetrics) error {
 	return nil
 }
 
-func (w worker) assignWl(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) <-chan struct{} {
-	log.
-		WithField("worker", w.id).
-		Tracef("request count: %d", wl.RequestsCount)
-	done := make(chan struct{})
+func (w worker) assignWls(ctx context.Context, wls []model.Workload, metChan chan<- *metrics.NetworkMetrics) {
+	wg := &sync.WaitGroup{}
+	wg.Add(len(wls))
 
-	go func() {
-		_ = w.requester.Assign(ctx, wl, metChan)
-		done <- struct{}{}
-	}()
+	for _, wl := range wls {
+		wl := wl
+		go func() {
+			defer wg.Done()
+			log.
+				WithField("worker", w.id).
+				Tracef("request count: %d", wl.RequestsCount)
+			_ = w.requester.Assign(ctx, wl, metChan)
+		}()
+	}
 
-	return done
+	wg.Wait()
 }

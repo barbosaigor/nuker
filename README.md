@@ -8,8 +8,8 @@ It's a suitable alternative for [JMeter](https://jmeter.apache.org/) or similar 
 ### Features  
 * High throughput with lower resource usage   
 * Easy to write configuration file with an expressive config plan   
-* Observability - realtime metrics and detailed log file  
-* Distributed load testing, easy to run your plan among your nodes using different algorithms  
+* Observability, realtime metrics and detailed log file  
+* Distributed load testing, easy to run your plan among nodes   
 
 ### Install  
 ```sh
@@ -84,8 +84,8 @@ Each worker should connect to the master nuker, following master URL.
 
 Start a master nuker:  
 ```sh
-$ # --as-worker makes master a worker as well  
-$ nuker master plan.yaml --as-worker
+# --min-workers defines how many workers should master wait before start pipeline (default 1)
+$ nuker run plan.yaml --master
 master URL: http://node-ip.io/master
 ```
 
@@ -94,7 +94,7 @@ Connect a worker into master:
 $ nuker worker http://node-ip.io/master 
 ```  
 
-After that master would be able to balance the workerload among workers.  
+After that, master would be able to balance the workload among workers.  
 
 ### To Do
-- [ ] Improve console metrics  
+- [ ] Improve console metrics, idea: [k6](https://k6.io/) console metrics  

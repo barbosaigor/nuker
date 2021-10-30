@@ -64,13 +64,21 @@ func (m *master) Run(ctx context.Context, cfg config.Config) (err error) {
 	})
 
 	errG.Go(func() error {
+		defer cancelCtx()
 		defer func() {
 			log.Trace("waiting for graceful worker shutdowns")
 			m.done = true
-			<-time.After(5 * time.Second)
-			cancelCtx()
+			select {
+			case <-time.After(1 * time.Minute):
+				return
+			case <-m.isDrained():
+				log.Trace("awaiting for remaining workers metric")
+				<-time.After(5 * time.Second)
+				return
+			}
 		}()
-		// wait and start pipeline when there are enough workers assigned
+
+		// start pipeline when there are enough workers assigned
 		for {
 			select {
 			case <-cCtx.Done():
@@ -87,9 +95,22 @@ func (m *master) Run(ctx context.Context, cfg config.Config) (err error) {
 	return errG.Wait()
 }
 
+func (m *master) isDrained() <-chan struct{} {
+	drainCh := make(chan struct{})
+	go func() {
+		for {
+			if !m.orchSvc.HasAnyWorkload() {
+				drainCh <- struct{}{}
+			}
+			<-time.After(100 * time.Millisecond)
+		}
+	}()
+	return drainCh
+}
+
 func (m *master) listen(ctx context.Context, metChan chan<- *metrics.NetworkMetrics) error {
 	log.Infof("master %s:%s", net.IP(), m.opts.Port)
-
+	// TODO: refactor, extract handler logic to separate function
 	m.server.Post("/worker/:id", func(c *fiber.Ctx) error {
 		wb, err := m.parseWorkerBody(c)
 		if err != nil {
@@ -148,13 +169,13 @@ func (m *master) listen(ctx context.Context, metChan chan<- *metrics.NetworkMetr
 
 		m.orchSvc.FlushWorker(workerID)
 
-		wl, shouldProcess := m.orchSvc.TakeWorkload(workerID)
-		if !shouldProcess {
+		wls := m.orchSvc.TakeWorkloads(workerID)
+		if !m.done && len(wls) == 0 {
 			return c.SendStatus(http.StatusNoContent)
 		}
 
 		var op model.WorkerOp
-		if m.done {
+		if m.done && len(wls) == 0 {
 			op = model.Detach
 		} else {
 			op = model.Assignment
@@ -162,8 +183,9 @@ func (m *master) listen(ctx context.Context, metChan chan<- *metrics.NetworkMetr
 
 		lc := model.LaborContract{
 			Operation: op,
-			Workload:  wl,
+			Workloads: wls,
 		}
+
 		resp, err := json.Marshal(lc)
 		if err != nil {
 			return err
