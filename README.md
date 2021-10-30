@@ -86,12 +86,12 @@ Start a master nuker:
 ```sh
 # --min-workers defines how many workers should master wait before start pipeline (default 1)
 $ nuker run plan.yaml --master
-master URL: http://node-ip.io/master
+master URL: http://master-ip.io/
 ```
 
 Connect a worker into master:  
 ```sh
-$ nuker worker http://node-ip.io/master 
+$ nuker worker http://master-ip.io/ 
 ```  
 
 After that, master would be able to balance the workload among workers.  
