@@ -60,7 +60,8 @@ func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
 }
 
 func (p *pipeline) startTicker(ctx context.Context, container config.Container) {
-	tCtx, cancelFn := context.WithTimeout(ctx, time.Second*time.Duration(container.Duration+container.HoldFor))
+	totalDuration := time.Duration(container.Duration+container.HoldFor) * time.Second
+	tCtx, cancelFn := context.WithTimeout(ctx, totalDuration)
 	defer cancelFn()
 
 	ticker := time.NewTicker(time.Second)
@@ -74,21 +75,23 @@ func (p *pipeline) startTicker(ctx context.Context, container config.Container) 
 			return
 		case <-ticker.C:
 			log.Trace("do request")
-			p.runContainer(tCtx, startTime, container)
+			p.runContainer(tCtx, startTime, totalDuration, container)
 		}
 	}
 }
 
 func (p *pipeline) runContainer(
 	ctx context.Context,
-	startTime time.Duration,
+	startTime, totalDuration time.Duration,
 	container config.Container) {
 
 	currTime := time.Duration(time.Now().UnixNano())
-	endTime := time.Duration(container.Duration * int(time.Second))
+	endTime := startTime + totalDuration
 	reqCount := p.calcRequests(startTime, endTime, currTime, container.Min, container.Max)
 
-	log.Tracef("request count: %d", reqCount)
+	log.
+		WithField("container", container.Name).
+		Infof("request count: %d", reqCount)
 
 	wl := model.Workload{
 		RequestsCount: reqCount,
