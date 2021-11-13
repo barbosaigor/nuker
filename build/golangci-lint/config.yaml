@@ -1,0 +1,46 @@
+run:
+  deadline: 120s
+  aggregate: true
+  tests: true
+  modules-download-mode: vendor
+  skip-dirs:
+    - app/provider/mock
+  skip-files:
+    - mock.go
+    - _test.go
+
+linters: 
+  disable-all: true
+  enable:
+    - gosec
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - revive
+    - ineffassign
+    - lll
+    - misspell
+    - vet
+    - vetshadow
+    - staticcheck
+    - deadcode
+    - structcheck
+    - unconvert
+    - varcheck
+
+linters-settings:
+  goling: 
+    min-confidence: 0.9
+  lll:
+    line-length: 140
+  misspell:
+    ignore-words:
+      - americanas
+      - submarino
+      - shoptime
+      - soubarato
+      - autor
+      - intelectual
+  gocyclo:
+    min-complexity: 10

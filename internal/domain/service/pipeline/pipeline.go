@@ -118,7 +118,7 @@ func (p *pipeline) calcRequests(start, end, curr time.Duration, min, max int) in
 
 	requests := min + int(a/b)
 
-	if int(requests) > max {
+	if requests > max {
 		return max
 	}
 

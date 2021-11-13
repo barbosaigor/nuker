@@ -10,7 +10,7 @@ test:
 	@go test -mod=vendor -race ./...
 
 lint:
-	@echo todo
+	@golangci-lint run ./... --config ./build/golangci-lint/config.yaml
 
 run:
 	go run cmd/nuker/main.go

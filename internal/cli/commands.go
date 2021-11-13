@@ -7,9 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var VERSION string = "0.0.0"
+var Version = "0.0.0"
 
 // Exec Command flags
+
 var DryRunFlagExecCmd bool
 var MinFlagExecCmd int
 var MaxFlagExecCmd int
@@ -17,11 +18,13 @@ var DurationFlagExecCmd int
 var MethodFlagExecCmd string
 
 // Worker flags
+
 var MasterURI string
 var WorkerID string
 var WorkerWeight int
 
 // Global flags
+
 var Verbose bool
 var LogLevel string
 var Quiet bool
@@ -42,7 +45,7 @@ var VersionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Nuker version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("nuker version " + VERSION)
+		fmt.Println("nuker version " + Version)
 	},
 }
 
@@ -87,7 +90,7 @@ var Cli = &cobra.Command{
 	Long: "Nuker is a CLI tool for load testing, with a " +
 		"powerful configuration file (but easy) for planning your tests.",
 	Example: "nuker run my-plan.yaml",
-	Version: VERSION,
+	Version: Version,
 	CompletionOptions: cobra.CompletionOptions{
 		DisableDefaultCmd: true,
 	},
@@ -111,7 +114,9 @@ func ExecCli() error {
 	Cli.PersistentFlags().StringVar(&Port, "port", "33001", "port defines which port master server should listen")
 	Cli.PersistentFlags().BoolVar(&Master, "master", false, "master makes nuker a master application, awaiting for workers come out")
 	Cli.PersistentFlags().BoolVar(&Worker, "worker", false, "worker makes nuker a worker, and need to connect to master")
-	Cli.PersistentFlags().IntVar(&MinWorkers, "min-workers", 1, "min-workers defines how many workers should master has before start pipeline (default 1)")
+	Cli.PersistentFlags().IntVar(&MinWorkers, "min-workers", 1,
+		"min-workers defines how many workers should master has before start pipeline (default 1)",
+	)
 
 	WorkerCmd.Flags().StringVar(&WorkerID, "id", "", "id defines worker ID. It should be unique among workers")
 	WorkerCmd.Flags().IntVar(&WorkerWeight, "weight", 1, "weight defines worker weight (default 1)")

@@ -2,8 +2,6 @@ package http
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 	"time"
 
 	"github.com/barbosaigor/nuker/internal/domain/model"
@@ -15,8 +13,6 @@ import (
 	"github.com/barbosaigor/nuker/pkg/metrics"
 	"github.com/barbosaigor/nuker/pkg/net"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/utils"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -110,111 +106,16 @@ func (m *master) isDrained() <-chan struct{} {
 
 func (m *master) listen(ctx context.Context, metChan chan<- *metrics.NetworkMetrics) error {
 	log.Infof("master URL: http://%s:%s", net.IP(), m.opts.Port)
-	// TODO: refactor, extract handler logic to separate function
-	m.server.Post("/worker/:id", func(c *fiber.Ctx) error {
-		wb, err := m.parseWorkerBody(c)
-		if err != nil {
-			return err
-		}
 
-		wb.ID = utils.ImmutableString(c.Params("id"))
+	m.server.Post("/worker/:id", m.newWorkerWithID)
 
-		m.orchSvc.AddWorker(wb.ID, wb.Weight)
+	m.server.Post("/worker", m.newWorker)
 
-		resp, err := json.Marshal(wb)
-		if err != nil {
-			return err
-		}
+	m.server.Delete("/worker/:id", m.deleteWorker)
 
-		c.Send(resp)
-		return nil
-	})
+	m.server.Get("/worker/:id", m.getWorkload)
 
-	m.server.Post("/worker", func(c *fiber.Ctx) error {
-		wb, err := m.parseWorkerBody(c)
-		if err != nil {
-			return err
-		}
-
-		wb.ID = uuid.NewString()
-
-		m.orchSvc.AddWorker(wb.ID, wb.Weight)
-
-		resp, err := json.Marshal(wb)
-		if err != nil {
-			return err
-		}
-
-		c.Set("Content-Type", "application/json")
-		c.Send(resp)
-
-		return nil
-	})
-
-	m.server.Delete("/worker/:id", func(c *fiber.Ctx) error {
-		workerID := utils.ImmutableString(c.Params("id"))
-
-		m.orchSvc.DelWorker(workerID)
-
-		return nil
-	})
-
-	m.server.Get("/worker/:id", func(c *fiber.Ctx) error {
-		workerID := utils.ImmutableString(c.Params("id"))
-
-		if !m.orchSvc.HasWorker(workerID) {
-			log.Infof("worker %q not found", workerID)
-			return c.SendStatus(http.StatusNotFound)
-		}
-
-		m.orchSvc.FlushWorker(workerID)
-
-		wls := m.orchSvc.TakeWorkloads(workerID)
-		if !m.done && len(wls) == 0 {
-			return c.SendStatus(http.StatusNoContent)
-		}
-
-		var op model.WorkerOp
-		if m.done && len(wls) == 0 {
-			op = model.Detach
-		} else {
-			op = model.Assignment
-		}
-
-		lc := model.LaborContract{
-			Operation: op,
-			Workloads: wls,
-		}
-
-		resp, err := json.Marshal(lc)
-		if err != nil {
-			return err
-		}
-
-		c.Set("Content-Type", "application/json")
-		c.Send(resp)
-
-		return nil
-	})
-
-	m.server.Post("/worker/:id/metrics", func(c *fiber.Ctx) error {
-		workerID := utils.ImmutableString(c.Params("id"))
-
-		if !m.orchSvc.HasWorker(workerID) {
-			return c.SendStatus(http.StatusNotFound)
-		}
-
-		var met metrics.NetworkMetrics
-
-		err := c.BodyParser(&met)
-		if err != nil {
-			return err
-		}
-
-		metChan <- &met
-
-		return nil
-	})
+	m.server.Post("/worker/:id/metrics", m.addMetrics(metChan))
 
 	return m.server.Listen(":" + m.opts.Port)
 }
