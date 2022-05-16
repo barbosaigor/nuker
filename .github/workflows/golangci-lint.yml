@@ -1,4 +1,4 @@
-name: golangci-lint
+name: workflow
 on:
   push:
     tags:
@@ -11,12 +11,12 @@ permissions:
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
   # pull-requests: read
 jobs:
-  golangci:
+  lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: golangci-lint
+      - name: lint
         uses: golangci/golangci-lint-action@v2
         with:
           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
@@ -39,3 +39,9 @@ jobs:
 
           # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
           # skip-build-cache: true
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: make test
