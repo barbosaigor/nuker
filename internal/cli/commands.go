@@ -55,7 +55,6 @@ var ExecCmd = &cobra.Command{
 	Example: "nuker exec http://my-api.com/product/v2/123 --min 15 --max 20 --duration 10",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
 		IsExec = true
 		Args = args
 	},
@@ -68,7 +67,9 @@ var WorkerCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		IsWorker = true
-		MasterURI = args[0]
+		if len(args) > 0 {
+			MasterURI = args[0]
+		}
 		Args = args
 	},
 }
@@ -115,7 +116,7 @@ func ExecCli() error {
 	Cli.PersistentFlags().BoolVar(&Master, "master", false, "master makes nuker a master application, awaiting for workers come out")
 	Cli.PersistentFlags().BoolVar(&Worker, "worker", false, "worker makes nuker a worker, and need to connect to master")
 	Cli.PersistentFlags().IntVar(&MinWorkers, "min-workers", 1,
-		"min-workers defines how many workers should master has before start pipeline (default 1)",
+		"min-workers defines how many workers should master has before start pipeline",
 	)
 
 	WorkerCmd.Flags().StringVar(&WorkerID, "id", "", "id defines worker ID. It should be unique among workers")
