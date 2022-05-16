@@ -12,10 +12,10 @@ test:
 	@go test -mod=vendor -race ./...
 
 lint:
-	golangci-lint run ./... --config ./build/golangci-lint/config.yaml
+	@golangci-lint run ./... --config ./build/golangci-lint/config.yaml
 
 run:
-	go run cmd/nuker/main.go
+	@go run cmd/nuker/main.go
 
 clear:
-	rm nuker-*.jsonl
+	@rm -f nuker-*.jsonl
