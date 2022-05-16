@@ -1,5 +1,5 @@
 # Nuker
-[![golangci-lint](https://github.com/barbosaigor/nuker/actions/workflows/golangci-lint.yml/badge.svg?branch=master)](https://github.com/barbosaigor/nuker/actions/workflows/golangci-lint.yml)
+[![workflow](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml/badge.svg?branch=master)](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml)
 
 **WIP (Work in Progress)**  _This is not the final product_    
 
