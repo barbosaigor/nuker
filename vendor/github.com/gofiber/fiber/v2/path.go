@@ -53,6 +53,8 @@ const (
 var (
 	// slash has a special role, unlike the other parameters it must not be interpreted as a parameter
 	routeDelimiter = []byte{slashDelimiter, '-', '.'}
+	// list of greedy parameters
+	greedyParameters = []byte{wildcardParam, plusParam}
 	// list of chars for the parameter recognising
 	parameterStartChars = []byte{wildcardParam, plusParam, paramStarterChar}
 	// list of chars of delimiters and the starting parameter name char
@@ -183,7 +185,7 @@ func (routeParser *routeParser) analyseParameterPart(pattern string) (string, *r
 	} else if parameterEndPosition == -1 {
 		parameterEndPosition = len(pattern) - 1
 	} else if !isInCharset(pattern[parameterEndPosition+1], parameterDelimiterChars) {
-		parameterEndPosition = parameterEndPosition + 1
+		parameterEndPosition++
 	}
 	// cut params part
 	processedPart := pattern[0 : parameterEndPosition+1]
@@ -350,7 +352,7 @@ func GetTrimmedParam(param string) string {
 	start := 0
 	end := len(param)
 
-	if param[start] != paramStarterChar { // is not a param
+	if end == 0 || param[start] != paramStarterChar { // is not a param
 		return param
 	}
 	start++
