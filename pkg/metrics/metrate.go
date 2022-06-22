@@ -1,10 +1,8 @@
-package probe
+package metrics
 
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/barbosaigor/nuker/pkg/metrics"
 )
 
 type MetricRate struct {
@@ -30,7 +28,7 @@ func NewMetricRate(sampleSize int) *MetricRate {
 	}
 }
 
-func (mr *MetricRate) Append(m *metrics.NetworkMetrics) {
+func (mr *MetricRate) Append(m *NetworkMetrics) {
 	if m == nil {
 		return
 	}

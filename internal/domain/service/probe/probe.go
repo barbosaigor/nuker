@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/barbosaigor/nuker/internal/domain/service/bufwriter"
+	"github.com/barbosaigor/nuker/internal/domain/service/view"
 	"github.com/barbosaigor/nuker/pkg/metrics"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,14 +18,16 @@ type Probe interface {
 
 type probe struct {
 	logger  bufwriter.BufWriter
-	metRate *MetricRate
+	vw      view.View
+	metRate *metrics.MetricRate
 	mut     *sync.Mutex
 }
 
-func New(logger bufwriter.BufWriter) Probe {
+func New(logger bufwriter.BufWriter, vw view.View) Probe {
 	return &probe{
 		logger:  logger,
-		metRate: &MetricRate{},
+		vw:      vw,
+		metRate: &metrics.MetricRate{},
 		mut:     &sync.Mutex{},
 	}
 }
@@ -37,19 +40,21 @@ func (p *probe) Listen(ctx context.Context, met <-chan *metrics.NetworkMetrics) 
 		case <-ctx.Done():
 			log.Trace("probe: context close")
 			p.metrReport(ctx)
+			p.vw.ShutDown()
 			return nil
 		case m, ok := <-met:
 			if !ok {
 				log.Trace("probe: metrics channel close")
 				return nil
 			}
-			_ = p.writeMetr(ctx, m)
+			_ = p.writeMetrToLogger(ctx, m)
 			p.metRate.Append(m)
+			p.vw.SetMetric(p.metRate)
 		}
 	}
 }
 
-func (p *probe) writeMetr(ctx context.Context, m *metrics.NetworkMetrics) error {
+func (p *probe) writeMetrToLogger(ctx context.Context, m *metrics.NetworkMetrics) error {
 	if m == nil {
 		return nil
 	}
