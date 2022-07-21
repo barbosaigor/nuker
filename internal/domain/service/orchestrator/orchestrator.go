@@ -155,7 +155,7 @@ func (o *orchestrator) AddWorker(ID string, weight int) {
 	if ok {
 		log.
 			WithField("worker-id", ID).
-			Infof("worker already registered")
+			Debugf("worker already registered")
 		return
 	}
 

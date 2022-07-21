@@ -105,7 +105,7 @@ func (m *master) isDrained() <-chan struct{} {
 }
 
 func (m *master) listen(ctx context.Context, metChan chan<- *metrics.NetworkMetrics) error {
-	log.Infof("master URL: http://%s:%s", net.IP(), m.opts.Port)
+	log.Debugf("master URL: http://%s:%s", net.IP(), m.opts.Port)
 
 	m.server.Post("/worker/:id", m.newWorkerWithID)
 

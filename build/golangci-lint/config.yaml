@@ -9,7 +9,7 @@ run:
     - mock.go
     - _test.go
 
-linters: 
+linters:
   disable-all: true
   enable:
     - gosec
@@ -30,17 +30,11 @@ linters:
     - varcheck
 
 linters-settings:
-  goling: 
+  goling:
     min-confidence: 0.9
   lll:
     line-length: 140
   misspell:
     ignore-words:
-      - americanas
-      - submarino
-      - shoptime
-      - soubarato
-      - autor
-      - intelectual
   gocyclo:
     min-complexity: 10

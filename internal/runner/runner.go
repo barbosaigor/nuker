@@ -49,7 +49,7 @@ func (r *runner) exec(ctx context.Context) error {
 	}
 
 	if cli.DryRunFlagExecCmd {
-		log.Infof("plan: %+v", *cfg)
+		log.Debugf("plan: %+v", *cfg)
 		return nil
 	}
 

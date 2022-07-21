@@ -104,7 +104,7 @@ func (lm *localMaster) assignWls(ctx context.Context, wls []model.Workload, metC
 }
 
 func (lm *localMaster) doWl(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) {
-	log.Infof("running %d requests", wl.RequestsCount)
+	log.Debugf("running %d requests", wl.RequestsCount)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(wl.RequestsCount)
