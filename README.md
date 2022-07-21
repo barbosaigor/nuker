@@ -1,6 +1,14 @@
 # Nuker
 [![workflow](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml/badge.svg?branch=master)](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml)
 
+<p align="center">
+  <img src="res/GOPHER_VIKING.png" alt="gopher" width="450"></a>
+  <br>
+  <i>Nuker - load testing tool</i>
+  <br>
+  <i>Image by <a href="https://github.com/ashleymcnamara/gophers/">Ashley McNamara</a></i>
+</p>
+
 Nuker is a CLI tool for load testing, with a powerful configuration file (but easy) for planning your tests.   
 It's a suitable alternative for [JMeter](https://jmeter.apache.org/) or similar tools.  
 
