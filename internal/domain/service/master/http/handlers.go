@@ -64,7 +64,7 @@ func (m *master) getWorkload(c *fiber.Ctx) error {
 	workerID := utils.ImmutableString(c.Params("id"))
 
 	if !m.orchSvc.HasWorker(workerID) {
-		log.Infof("worker %q not found", workerID)
+		log.Debugf("worker %q not found", workerID)
 		return c.SendStatus(http.StatusNotFound)
 	}
 

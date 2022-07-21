@@ -6,6 +6,8 @@
 Nuker is a CLI tool for load testing, with a powerful configuration file (but easy) for planning your tests.   
 It's a suitable alternative for [JMeter](https://jmeter.apache.org/) or similar tools.  
 
+![nuker](res/nuker.gif)
+
 ### Features  
 * High throughput with lower resource usage   
 * Easy to write configuration file with an expressive config plan   
@@ -96,6 +98,3 @@ $ nuker worker http://master-ip.io/
 ```  
 
 After that, master would be able to balance the workload among workers.  
-
-### To Do
-- [ ] Improve console metrics, idea: [k6](https://k6.io/) console metrics  

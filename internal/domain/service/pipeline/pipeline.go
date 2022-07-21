@@ -31,10 +31,10 @@ func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
 	log.Tracef("%+v", cfg)
 
 	for _, stg := range cfg.Stages {
-		log.Info("running stage " + stg.Name)
+		log.Debug("running stage " + stg.Name)
 
 		for _, step := range stg.Steps {
-			log.Info("running step " + step.Name)
+			log.Debug("running step " + step.Name)
 
 			stepWg := &sync.WaitGroup{}
 			stepWg.Add(len(step.Containers))
@@ -45,7 +45,7 @@ func (p *pipeline) Run(ctx context.Context, cfg config.Config) (err error) {
 				go func() {
 					defer stepWg.Done()
 
-					log.Info("running container " + container.Name)
+					log.Debug("running container " + container.Name)
 
 					p.startTicker(ctx, container)
 				}()
@@ -91,7 +91,7 @@ func (p *pipeline) runContainer(
 
 	log.
 		WithField("container", container.Name).
-		Infof("request count: %d", reqCount)
+		Debugf("request count: %d", reqCount)
 
 	wl := model.Workload{
 		RequestsCount: reqCount,

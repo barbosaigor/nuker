@@ -75,5 +75,5 @@ func (p *probe) writeMetrToLogger(ctx context.Context, m *metrics.NetworkMetrics
 func (p *probe) metrReport(ctx context.Context) {
 	log.
 		WithField("logPath", p.logger.Location()).
-		Info(p.metRate.String())
+		Debug(p.metRate.String())
 }

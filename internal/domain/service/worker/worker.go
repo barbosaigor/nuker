@@ -149,7 +149,7 @@ func (w worker) Do(ctx context.Context) error {
 		if wr.Operation == model.Detach {
 			log.
 				WithField("worker", w.id).
-				Infof("detaching from master")
+				Debugf("detaching from master")
 			return nil
 		}
 
