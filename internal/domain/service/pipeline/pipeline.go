@@ -83,8 +83,8 @@ func (p *pipeline) startTicker(ctx context.Context, container config.Container) 
 func (p *pipeline) runContainer(
 	ctx context.Context,
 	startTime, totalDuration time.Duration,
-	container config.Container) {
-
+	container config.Container,
+) {
 	currTime := time.Duration(time.Now().UnixNano())
 	endTime := startTime + totalDuration
 	reqCount := p.calcRequests(startTime, endTime, currTime, container.Min, container.Max)

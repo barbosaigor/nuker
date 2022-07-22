@@ -128,14 +128,14 @@ func TestFromYamlFile(t *testing.T) {
 		panic(err)
 	}
 	defer syscall.Unlink(validFile.Name())
-	ioutil.WriteFile(validFile.Name(), configData, 0644)
+	ioutil.WriteFile(validFile.Name(), configData, 0o644)
 
 	invalidFile, err := ioutil.TempFile("", "testinvalidyamlfile.yaml")
 	if err != nil {
 		panic(err)
 	}
 	defer syscall.Unlink(invalidFile.Name())
-	ioutil.WriteFile(invalidFile.Name(), invalidCfgData, 0644)
+	ioutil.WriteFile(invalidFile.Name(), invalidCfgData, 0o644)
 
 	type args struct {
 		fileName string

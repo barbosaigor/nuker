@@ -1,5 +1,5 @@
 # Nuker
-[![workflow](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml/badge.svg?branch=master)](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml)
+[![ci](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml/badge.svg?branch=master)](https://github.com/barbosaigor/nuker/actions/workflows/test-lint.yml)
 
 <p align="center">
   <img src="res/GOPHER_VIKING.png" alt="gopher" width="450"></a>

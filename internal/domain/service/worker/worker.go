@@ -101,7 +101,6 @@ func (w worker) Do(ctx context.Context) error {
 	for {
 		req, err := w.client.R().
 			Get(w.workerEndpoint())
-
 		if err != nil {
 			return fmt.Errorf("error to connect to master node: %w", err)
 		}
@@ -164,7 +163,6 @@ func (w worker) sendMetrics(metChan <-chan *metrics.NetworkMetrics) error {
 		req, err := w.client.R().
 			SetBody(m).
 			Post(w.workerEndpoint() + "/metrics")
-
 		if err != nil {
 			log.Errorf("error to connect master node: %v", err)
 			continue

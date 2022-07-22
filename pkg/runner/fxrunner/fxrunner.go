@@ -8,7 +8,6 @@ import (
 )
 
 func Run(opt fx.Option) error {
-
 	app := fx.New(
 		opt,
 		fx.Invoke(startRunner),

@@ -22,7 +22,6 @@ func New(client *resty.Client) repository.Streamer {
 }
 
 func (s streamer) Stream(ctx context.Context, cfg config.Network) (*metrics.NetworkMetrics, error) {
-
 	timeout := 3 * time.Second
 	if cfg.Timeout > 0 {
 		timeout = time.Duration(cfg.Timeout) * time.Second

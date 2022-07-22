@@ -19,3 +19,6 @@ run:
 
 clear:
 	@rm -f nuker-*.jsonl
+
+fmt:
+	gofumpt -l -w -extra .

@@ -11,33 +11,41 @@ var Version = "0.0.0"
 
 // Exec Command flags
 
-var DryRunFlagExecCmd bool
-var MinFlagExecCmd int
-var MaxFlagExecCmd int
-var DurationFlagExecCmd int
-var MethodFlagExecCmd string
+var (
+	DryRunFlagExecCmd   bool
+	MinFlagExecCmd      int
+	MaxFlagExecCmd      int
+	DurationFlagExecCmd int
+	MethodFlagExecCmd   string
+)
 
 // Worker flags
 
-var MasterURI string
-var WorkerID string
-var WorkerWeight int
+var (
+	MasterURI    string
+	WorkerID     string
+	WorkerWeight int
+)
 
 // Global flags
 
-var Verbose bool
-var LogLevel string
-var Quiet bool
-var NoLogFile bool
-var LogFile string
-var Port string
-var Master bool
-var Worker bool
-var MinWorkers int
+var (
+	Verbose    bool
+	LogLevel   string
+	Quiet      bool
+	NoLogFile  bool
+	LogFile    string
+	Port       string
+	Master     bool
+	Worker     bool
+	MinWorkers int
+)
 
-var IsExec bool
-var IsRun bool
-var IsWorker bool
+var (
+	IsExec   bool
+	IsRun    bool
+	IsWorker bool
+)
 
 var Args []string
 
@@ -98,7 +106,6 @@ var Cli = &cobra.Command{
 }
 
 func ExecCli() error {
-
 	ExecCmd.Flags().BoolVar(&DryRunFlagExecCmd, "dry-run", false, "dry run verifies your plan config, but do not run")
 	ExecCmd.Flags().IntVar(&MinFlagExecCmd, "min", 0, "min defines minimum request count")
 	ExecCmd.Flags().IntVar(&MaxFlagExecCmd, "max", 0, "max defines maximum request count (default equals to min)")
