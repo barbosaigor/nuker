@@ -13,4 +13,6 @@ func New() (view.View, error) {
 
 func (nopView) SetMetric(mr *metrics.MetricRate) {}
 
+func (nopView) Start() {}
+
 func (nopView) ShutDown() {}

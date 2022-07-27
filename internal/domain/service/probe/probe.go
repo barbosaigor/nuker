@@ -35,6 +35,8 @@ func New(logger bufwriter.BufWriter, vw view.View) Probe {
 func (p *probe) Listen(ctx context.Context, met <-chan *metrics.NetworkMetrics) error {
 	log.Trace("probe: listening")
 
+	go p.vw.Start()
+
 	for {
 		select {
 		case <-ctx.Done():
