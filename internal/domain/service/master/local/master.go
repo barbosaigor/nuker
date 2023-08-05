@@ -2,8 +2,12 @@ package local
 
 import (
 	"context"
+	"os"
+	"runtime"
+	"strconv"
 	"sync"
 
+	"github.com/alitto/pond"
 	"github.com/barbosaigor/nuker/internal/domain/model"
 	"github.com/barbosaigor/nuker/internal/domain/service/master"
 	"github.com/barbosaigor/nuker/internal/domain/service/orchestrator"
@@ -108,9 +112,10 @@ func (lm *localMaster) doWl(ctx context.Context, wl model.Workload, metChan chan
 
 	wg := &sync.WaitGroup{}
 	wg.Add(wl.RequestsCount)
+	pool := pond.New(runtime.NumCPU(), lm.getPoolBufferSize())
 
 	for i := 0; i < wl.RequestsCount; i++ {
-		go func() {
+		pool.Submit(func() {
 			defer wg.Done()
 
 			met, err := lm.pubSvc.Publish(ctx, wl.Cfg)
@@ -121,8 +126,33 @@ func (lm *localMaster) doWl(ctx context.Context, wl model.Workload, metChan chan
 			if met != nil {
 				metChan <- met
 			}
-		}()
+		})
 	}
 
+	pool.StopAndWait()
 	wg.Wait()
+}
+
+const (
+	bufferSizeDefault = 100
+	bufferSizeEnv     = "NUKER_BUFFER_SIZE"
+)
+
+func (lm *localMaster) getPoolBufferSize() int {
+	size, ok := os.LookupEnv(bufferSizeEnv)
+	if !ok {
+		return bufferSizeDefault
+	}
+
+	s, err := strconv.Atoi(size)
+	if err != nil {
+		log.Error(err)
+		return bufferSizeDefault
+	}
+
+	if s > 0 {
+		return s
+	}
+
+	return bufferSizeDefault
 }

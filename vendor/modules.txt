@@ -1,3 +1,6 @@
+# github.com/alitto/pond v1.8.3
+## explicit; go 1.19
+github.com/alitto/pond
 # github.com/andybalholm/brotli v1.0.4
 ## explicit; go 1.12
 github.com/andybalholm/brotli
