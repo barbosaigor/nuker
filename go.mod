@@ -3,6 +3,7 @@ module github.com/barbosaigor/nuker
 go 1.18
 
 require (
+	github.com/alitto/pond v1.8.3
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gofiber/fiber/v2 v2.34.1
 	github.com/google/uuid v1.3.0
