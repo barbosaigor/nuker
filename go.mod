@@ -1,6 +1,6 @@
 module github.com/barbosaigor/nuker
 
-go 1.18
+go 1.21
 
 require (
 	github.com/alitto/pond v1.8.3

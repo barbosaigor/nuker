@@ -12,7 +12,6 @@ import (
 )
 
 type tView struct {
-	mr   *metrics.MetricRate
 	app  *tview.Application
 	txt  string
 	quit chan bool
@@ -20,7 +19,6 @@ type tView struct {
 
 func New() view.View {
 	return &tView{
-		mr:   &metrics.MetricRate{},
 		app:  tview.NewApplication(),
 		quit: make(chan bool),
 	}
@@ -36,16 +34,18 @@ func (vw *tView) SetMetric(mr *metrics.MetricRate) {
 		txt = fmt.Sprintf(
 			"requests........: [::b]total=[green]%d[white]\tsuccess=[green]%d[white]\tfailed=[green]%d[white][::-]\t\n"+
 				"success ratio.....: [::b][green]%f[white][::-]\n"+
-				"request time......: [::b]%%"+
+				"request time......: [::b]"+
 				"max=[green]%v[white]\t"+
 				"min=[green]%v[white]\t"+
-				"avg=[green]%v[white][::-]\n",
+				"avg=[green]%v[white][::-]\n"+
+				"time elapsed=[green]%s[white][::-]\n",
 			// -1, -1,
 			mr.Total, mr.Success, mr.Failed,
 			mr.AvgSuccess*100,
 			mr.MaxTime,
 			mr.AvgTime,
-			mr.MinTime)
+			mr.MinTime,
+			mr.TimeElapsed())
 	}
 
 	vw.txt = txt

@@ -3,7 +3,6 @@ package runner
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -39,7 +38,7 @@ func Module() fx.Option {
 
 	var consoleWriter io.Writer = os.Stdout
 	if cli.Quiet {
-		consoleWriter = ioutil.Discard
+		consoleWriter = io.Discard
 	}
 
 	logger := log.New()

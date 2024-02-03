@@ -3,8 +3,9 @@ package requester
 import (
 	"context"
 	"errors"
-	"sync"
+	"runtime"
 
+	"github.com/alitto/pond"
 	"github.com/barbosaigor/nuker/internal/domain/model"
 	"github.com/barbosaigor/nuker/internal/domain/service/publisher"
 	"github.com/barbosaigor/nuker/pkg/metrics"
@@ -26,13 +27,10 @@ func New(pub publisher.Publisher) Requester {
 }
 
 func (c requester) Assign(ctx context.Context, wl model.Workload, metChan chan<- *metrics.NetworkMetrics) error {
-	wg := &sync.WaitGroup{}
-	wg.Add(wl.RequestsCount)
+	wp := pond.New(runtime.NumCPU(), 100_000, pond.Context(ctx))
 
 	for i := 0; i < wl.RequestsCount; i++ {
-		go func() {
-			defer wg.Done()
-
+		wp.Submit(func() {
 			met, err := c.pub.Publish(ctx, wl.Cfg)
 			if errors.Is(err, model.ErrProtNotSupported) {
 				log.Trace(err)
@@ -42,10 +40,10 @@ func (c requester) Assign(ctx context.Context, wl model.Workload, metChan chan<-
 			if met != nil {
 				metChan <- met
 			}
-		}()
+		})
 	}
 
-	wg.Wait()
+	wp.StopAndWait()
 
 	return nil
 }

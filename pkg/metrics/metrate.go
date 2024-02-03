@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -17,7 +18,8 @@ type MetricRate struct {
 	AvgTime time.Duration
 	MinTime time.Duration
 
-	timeSum time.Duration
+	timeSum   time.Duration
+	startTime time.Time
 
 	SampleSize int
 }
@@ -25,6 +27,7 @@ type MetricRate struct {
 func NewMetricRate(sampleSize int) *MetricRate {
 	return &MetricRate{
 		SampleSize: sampleSize,
+		startTime:  time.Now(),
 	}
 }
 
@@ -79,4 +82,27 @@ func (mr MetricRate) String() string {
 	}
 
 	return string(data)
+}
+
+func (mr MetricRate) TimeElapsed() time.Duration {
+	return time.Now().Sub(mr.startTime)
+}
+
+func (mr MetricRate) View() string {
+	return fmt.Sprintf(
+		"requests........: total=%d\tsuccess=%d\tfailed=%d\t\n"+
+			"success ratio.....: %f\n"+
+			"request time......: "+
+			"max=%v\t"+
+			"min=%v\t"+
+			"avg=%v\n"+
+			"time elapsed=%s\n",
+		// -1, -1,
+		mr.Total, mr.Success, mr.Failed,
+		mr.AvgSuccess*100,
+		mr.MaxTime,
+		mr.AvgTime,
+		mr.MinTime,
+		mr.TimeElapsed(),
+	)
 }

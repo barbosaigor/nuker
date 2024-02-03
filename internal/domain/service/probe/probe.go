@@ -27,7 +27,7 @@ func New(logger bufwriter.BufWriter, vw view.View) Probe {
 	return &probe{
 		logger:  logger,
 		vw:      vw,
-		metRate: &metrics.MetricRate{},
+		metRate: metrics.NewMetricRate(0),
 		mut:     &sync.Mutex{},
 	}
 }
@@ -43,6 +43,7 @@ func (p *probe) Listen(ctx context.Context, met <-chan *metrics.NetworkMetrics) 
 			log.Trace("probe: context close")
 			p.metrReport(ctx)
 			p.vw.ShutDown()
+			log.Info(p.metRate.View())
 			return nil
 		case m, ok := <-met:
 			if !ok {
